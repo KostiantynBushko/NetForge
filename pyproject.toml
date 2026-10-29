@@ -1,0 +1,96 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "netforge"
+version = "0.1.0"
+description = "A modular network operations and security toolkit with a pluggable, adapter-driven architecture."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "NetForge contributors" }]
+keywords = ["networking", "security", "automation", "mcp", "llamaindex", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: System :: Networking",
+    "Topic :: Security",
+]
+
+# The core framework depends on Pydantic and the standard library only.
+# Every ecosystem integration (REST, MCP, LlamaIndex, SSH, DNS, capture) is an
+# optional extra: "Framework First" means the networking logic never requires
+# an AI or web framework to be installed.
+dependencies = [
+    "pydantic>=2.7",
+]
+
+[project.optional-dependencies]
+rest = ["fastapi>=0.110", "uvicorn>=0.29"]
+mcp = ["mcp>=1.2"]
+llamaindex = ["llama-index-core>=0.12"]
+ssh = ["asyncssh>=2.14"]
+dns = ["dnspython>=2.6"]
+capture = ["scapy>=2.5"]
+mqtt = ["paho-mqtt>=2.0"]
+opcua = ["asyncua>=1.1"]
+all = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "mcp>=1.2",
+    "llama-index-core>=0.12",
+    "asyncssh>=2.14",
+    "dnspython>=2.6",
+    "scapy>=2.5",
+    "paho-mqtt>=2.0",
+    "asyncua>=1.1",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.23",
+]
+
+[project.urls]
+Homepage = "https://github.com/KostiantynBushko/NetForge"
+Documentation = "https://github.com/KostiantynBushko/NetForge#readme"
+Source = "https://github.com/KostiantynBushko/NetForge"
+
+[project.scripts]
+netforge = "netforge.adapters.cli:main"
+
+# Third-party packages advertise themselves to NetForge through this entry
+# point group. Built-in capability modules are registered programmatically
+# instead, so they need no entry here.
+[project.entry-points."netforge.plugins"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["netforge*"]
+
+[tool.setuptools.package-data]
+netforge = ["py.typed"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-ra --strict-markers"
+markers = [
+    "network: marks tests that reach the network (deselect with '-m \"not network\"')",
+    "requires_root: marks tests that need elevated privileges",
+    "optional: marks tests that need an optional dependency",
+]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["E501"]
