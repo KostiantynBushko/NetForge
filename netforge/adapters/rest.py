@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from netforge.adapters.base import Adapter, AdapterError
+from netforge.adapters.base import Adapter
 from netforge.core.context import ExecutionContext
 from netforge.core.exceptions import DependencyMissingError, NetForgeError
 from netforge.core.logging import get_logger

@@ -32,6 +32,9 @@ htmlcov/
 # OS
 .DS_Store
 
+# Agent workspace metadata (machine-local)
+.agentworkspace.json
+
 # NetForge runtime artifacts
 *.pcap
 *.pcapng

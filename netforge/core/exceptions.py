@@ -75,8 +75,10 @@ class DependencyMissingError(NetForgeError):
         self.extra = extra
         self.feature = feature
         install = f"pip install 'netforge[{extra}]'" if extra else f"pip install {dependency}"
-        subject = f"{feature} requires the optional dependency {dependency!r}" if feature else (
-            f"the optional dependency {dependency!r} is required here"
+        subject = (
+            f"the optional dependency {dependency!r} is required for {feature}"
+            if feature
+            else f"the optional dependency {dependency!r} is required here"
         )
         super().__init__(f"{subject}. Install it with: {install}")
 
