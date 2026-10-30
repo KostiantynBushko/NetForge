@@ -20,6 +20,9 @@ The commands are:
 ``netforge run <operation> --request '<json>'``
     run an operation and print its response as JSON;
 
+``netforge run <operation> --<parameter> <value>``
+    run an operation, with the parameters of the operation as flags.
+
 ``netforge serve``
     start one of the other adapters -- ``rest``, ``mcp`` or ``llamaindex``.
 
@@ -36,6 +39,12 @@ import sys
 from typing import Any, Sequence
 
 from netforge.adapters.base import Adapter, AdapterError
+from netforge.adapters.parameters import (
+    ParameterError,
+    the_flags,
+    the_payload,
+    the_type_of,
+)
 from netforge.core.bootstrap import load_builtin_operations
 from netforge.core.context import ExecutionContext
 from netforge.core.exceptions import NetForgeError
@@ -130,14 +139,29 @@ def build_parser() -> argparse.ArgumentParser:
         "risk", parents=[common], help="Show the risk profile of the catalogue."
     )
 
-    run = subparsers.add_parser("run", parents=[common], help="Run an operation.")
+    run = subparsers.add_parser(
+        "run",
+        parents=[common],
+        help="Run an operation.",
+        epilog=(
+            "The parameters of the operation may be given as flags, the way a "
+            "person would type them: --host 192.168.0.13.  They are laid over "
+            "the request, so the two forms can be mixed.  "
+            "'netforge run <operation> --help' lists the parameters."
+        ),
+    )
     run.add_argument("operation", help="The name of the operation.")
     run.add_argument(
         "--request",
         default="{}",
         help="The request, as a JSON object (default: {}).",
     )
-    run.add_argument("--timeout", type=float, default=None, help="The time budget, in seconds.")
+    run.add_argument(
+        "--budget",
+        type=float,
+        default=None,
+        help="The time budget of the command, in seconds.",
+    )
 
     serve = subparsers.add_parser("serve", help="Start one of the other adapters.")
     serve.add_argument(
@@ -253,7 +277,12 @@ def _command_risk(args: argparse.Namespace, registry: OperationRegistry) -> int:
     return EXIT_OK
 
 
-def _command_run(args: argparse.Namespace, registry: OperationRegistry, context: ExecutionContext) -> int:
+def _command_run(
+    args: argparse.Namespace,
+    registry: OperationRegistry,
+    context: ExecutionContext,
+    extras: Sequence[str],
+) -> int:
     try:
         payload = json.loads(args.request)
     except json.JSONDecodeError as exc:
@@ -262,6 +291,19 @@ def _command_run(args: argparse.Namespace, registry: OperationRegistry, context:
     if not isinstance(payload, dict):
         print("the request must be a JSON object", file=sys.stderr)
         return EXIT_USAGE
+
+    descriptor = registry.get(args.operation)
+    properties = (descriptor.request_schema or {}).get("properties") or {}
+
+    try:
+        flags = the_payload(the_flags(extras), properties)
+    except ParameterError as exc:
+        print(str(exc), file=sys.stderr)
+        return EXIT_USAGE
+
+    # The flags are laid over the request: the JSON gives the base, and
+    # the command line says what to change.
+    payload.update(flags)
 
     operation = registry.create(args.operation)
     response = asyncio.run(operation.run_request(payload, context))
@@ -283,14 +325,80 @@ def _command_serve(args: argparse.Namespace, registry: OperationRegistry) -> int
     return serve_llamaindex(registry)
 
 
+def _the_operation_of_the_help(argv: Sequence[str] | None) -> str | None:
+    """The operation whose parameters help was asked for.
+
+    ``netforge run discovery.ping --help`` asks about the parameters of
+    ``discovery.ping`` -- the flags are the parameters of the operation,
+    and there is no way to know them before the operation is named.
+    """
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    if "run" not in tokens:
+        return None
+    rest = tokens[tokens.index("run") + 1:]
+    if not rest or rest[0].startswith("-"):
+        return None
+    if not any(token in ("-h", "--help") for token in rest[1:]):
+        return None
+    return rest[0]
+
+
+def _print_the_parameters(parser: argparse.ArgumentParser, operation: str) -> int:
+    """Print the parameters of an operation, then the help of the command."""
+    registry = load_builtin_operations()
+    try:
+        descriptor = registry.get(operation)
+    except NetForgeError:
+        print(f"no operation named {operation!r}", file=sys.stderr)
+        return EXIT_USAGE
+
+    properties = (descriptor.request_schema or {}).get("properties") or {}
+    print(f"the parameters of {descriptor.name}")
+    print()
+    if not properties:
+        print("  it takes no parameters.")
+    else:
+        required = set((descriptor.request_schema or {}).get("required") or [])
+        width = max(len(name) for name in properties)
+        for name, schema in properties.items():
+            kind = the_type_of(schema)
+            suffix = ""
+            if name not in required and "default" in schema:
+                suffix = f" (default: {schema['default']!r})"
+            print(f"  --{name.replace('_', '-'):<{width}}  {kind}{suffix}")
+    print()
+    try:
+        parser.parse_args(["run", "--help"])
+    except SystemExit:
+        pass
+    return EXIT_OK
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the ``netforge`` command and return its exit code."""
     parser = build_parser()
-    args = parser.parse_args(argv)
+
+    operation = _the_operation_of_the_help(argv)
+    if operation is not None:
+        return _print_the_parameters(parser, operation)
+    # The arguments that argparse does not know are the parameters of the
+    # operation, and only the run command takes them.
+    try:
+        args, extras = parser.parse_known_args(argv)
+    except SystemExit as exc:
+        # argparse exits by itself for --help and for a usage error; the
+        # exit code of the command is the code of the process.
+        return int(exc.code or 0)
     configure_logging(args.log_level)
 
     if not args.command:
         parser.print_help()
+        return EXIT_USAGE
+
+    if extras and args.command != "run":
+        print(
+            f"unrecognized arguments: {' '.join(extras)}", file=sys.stderr
+        )
         return EXIT_USAGE
 
     registry = load_builtin_operations()
@@ -315,9 +423,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.command == "risk":
             return _command_risk(args, registry)
         if args.command == "run":
-            if args.timeout is not None:
-                context.timeout = args.timeout
-            return _command_run(args, registry, context)
+            if args.budget is not None:
+                context.timeout = args.budget
+            return _command_run(args, registry, context, extras)
         if args.command == "serve":
             return _command_serve(args, registry)
     except NetForgeError as exc:

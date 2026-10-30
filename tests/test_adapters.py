@@ -85,6 +85,41 @@ class TestCli:
         assert "RiskPolicyError" in capsys.readouterr().err
 
 
+class TestTheParametersOnTheCommandLine:
+    """The parameters of an operation are given as flags.
+
+    Only the paths that stop before the operation runs are tested here:
+    the suite is offline.
+    """
+
+    def test_an_unknown_parameter_is_a_usage_error(self, capsys):
+        assert main(["run", "discovery.ping", "--hosst", "1.2.3.4"]) == 2
+        assert "unknown parameter" in capsys.readouterr().err
+
+    def test_the_refusal_names_the_parameters_there_are(self, capsys):
+        assert main(["run", "discovery.ping", "--nope", "1"]) == 2
+        assert "host" in capsys.readouterr().err
+
+    def test_a_value_that_does_not_fit_is_a_usage_error(self, capsys):
+        assert main(["run", "connectivity.tcp.connect", "--host", "x", "--port", "z"]) == 2
+        assert "whole number" in capsys.readouterr().err
+
+    def test_the_help_of_an_operation_lists_its_parameters(self, capsys):
+        assert main(["run", "discovery.service.enumerate", "--help"]) == 0
+        output = capsys.readouterr().out
+        assert "--host" in output
+        assert "--ports" in output
+        assert "--concurrency" in output
+
+    def test_the_help_of_the_command_says_how_the_parameters_are_given(self, capsys):
+        assert main(["run", "--help"]) == 0
+        assert "--host 192.168.0.13" in capsys.readouterr().out
+
+    def test_an_unknown_flag_of_another_command_is_a_usage_error(self, capsys):
+        assert main(["list", "--nope"]) == 2
+        assert "unrecognized arguments" in capsys.readouterr().err
+
+
 class TestAdapterContract:
     def test_the_cli_adapter_is_always_available(self, registry):
         adapter = CliAdapter(registry)

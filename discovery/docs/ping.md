@@ -41,10 +41,14 @@ Pings a host with the system ping utility and reports whether it answered, the p
 ### From the command line
 
 ```console
-$ netforge run discovery.ping --request '{"host": "..."}'
+$ netforge run discovery.ping --host "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run discovery.ping --request '{"host": "..."}'
+```
 
 ### From Python
 

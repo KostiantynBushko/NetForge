@@ -40,10 +40,14 @@ Probes a set of TCP ports on a host and reports which of them are open, together
 ### From the command line
 
 ```console
-$ netforge run discovery.service.enumerate --request '{"host": "..."}'
+$ netforge run discovery.service.enumerate --host "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run discovery.service.enumerate --request '{"host": "..."}'
+```
 
 ### From Python
 

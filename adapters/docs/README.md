@@ -61,9 +61,25 @@ netforge list                       # the catalogue, grouped by category
 netforge describe discovery.ping    # one operation, in full
 netforge categories                 # the capability categories
 netforge risk                       # the risk profile of the catalogue
-netforge run discovery.ping --request '{"host": "10.0.0.1"}'
+netforge run discovery.ping --host 10.0.0.1
 netforge serve rest --port 8000     # start another adapter
 ```
+
+The parameters of an operation are given as flags, the way a person would
+type them. The request is still accepted as JSON, and the flags are laid
+over it:
+
+```bash
+netforge run discovery.ping --host 10.0.0.1
+netforge run discovery.ping --request '{"host": "10.0.0.1"}'
+netforge run discovery.service.enumerate --host 10.0.0.1 --ports 22,80
+netforge run discovery.ping --help    # the parameters of that operation
+```
+
+The type of every parameter comes from the request schema of the
+operation, so a port is a number and a list is a list. A flag that names
+no parameter of the operation is refused, and the refusal names the
+parameters there are.
 
 `build_parser()` returns the `argparse.ArgumentParser`, and
 `main(argv=None)` runs the command and returns its exit code. `main` is

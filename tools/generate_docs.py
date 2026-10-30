@@ -423,11 +423,15 @@ def the_operation_page(descriptor: Any) -> str:
         "### From the command line",
         "",
         "```console",
-        f"$ netforge run {name}" + the_cli_request(parameters),
+        f"$ netforge run {name}" + the_cli_flags(parameters),
         "```",
         "",
-        "The request is a JSON object, and the values above are "
-        "placeholders.",
+        "The values above are placeholders.  The request may also be given "
+        "as a JSON object, which the flags are laid over:",
+        "",
+        "```console",
+        f"$ netforge run {name}" + the_cli_request(parameters),
+        "```",
         "",
         "### From Python",
         "",
@@ -487,12 +491,31 @@ def the_placeholder_of(kind: str) -> Any:
     return "..."
 
 
-def the_cli_request(parameters: list[dict[str, Any]]) -> str:
+def the_cli_flags(parameters: list[dict[str, Any]]) -> str:
     """The command line of an operation.
 
-    The command line takes the request as a JSON object, the way the
-    adapter takes it -- not one flag per parameter.
+    The parameters of the operation are given as flags, the way a person
+    would type them.
     """
+    parts = []
+    for parameter in parameters:
+        if not parameter["required"]:
+            continue
+        name = parameter["name"].replace("_", "-")
+        kind = parameter["type"]
+        if kind == "boolean":
+            parts.append(f" --{name}")
+        elif kind == "string":
+            parts.append(f' --{name} "..."')
+        elif kind.startswith("list"):
+            parts.append(f" --{name} []")
+        else:
+            parts.append(f" --{name} 0")
+    return "".join(parts)
+
+
+def the_cli_request(parameters: list[dict[str, Any]]) -> str:
+    """The request of an operation, as the JSON object the adapter takes."""
     payload = {
         parameter["name"]: the_placeholder_of(parameter["type"])
         for parameter in parameters

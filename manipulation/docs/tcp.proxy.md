@@ -41,10 +41,14 @@ Runs a TCP proxy that accepts connections on one address and forwards them to an
 ### From the command line
 
 ```console
-$ netforge run manipulation.tcp.proxy --request '{"upstream_host": "...", "upstream_port": 0}'
+$ netforge run manipulation.tcp.proxy --upstream-host "..." --upstream-port 0
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run manipulation.tcp.proxy --request '{"upstream_host": "...", "upstream_port": 0}'
+```
 
 ### From Python
 

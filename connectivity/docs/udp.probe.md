@@ -44,10 +44,14 @@ Sends a datagram to the given UDP port and waits for a reply. The probe is read-
 ### From the command line
 
 ```console
-$ netforge run connectivity.udp.probe --request '{"host": "...", "port": 0}'
+$ netforge run connectivity.udp.probe --host "..." --port 0
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run connectivity.udp.probe --request '{"host": "...", "port": 0}'
+```
 
 ### From Python
 

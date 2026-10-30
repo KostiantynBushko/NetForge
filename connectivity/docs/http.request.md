@@ -47,10 +47,14 @@ Performs an HTTP request and returns the status code, the response headers and t
 ### From the command line
 
 ```console
-$ netforge run connectivity.http.request --request '{"url": "..."}'
+$ netforge run connectivity.http.request --url "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run connectivity.http.request --request '{"url": "..."}'
+```
 
 ### From Python
 

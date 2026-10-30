@@ -63,15 +63,25 @@ netforge list --json                # the catalogue as JSON
 netforge describe discovery.ping    # one operation, with its request schema
 netforge categories                 # the capability categories
 netforge risk                       # the risk profile of the catalogue
-netforge run discovery.ping --request '{"host": "10.0.0.1"}'
+netforge run discovery.ping --host 10.0.0.1
 netforge serve rest --port 8080     # start another adapter
+```
+
+The parameters of an operation are given as flags, the way a person would
+type them. They are laid over the request, so the two forms can be mixed:
+
+```bash
+netforge run discovery.ping --host 10.0.0.1
+netforge run discovery.ping --request '{"host": "10.0.0.1"}'
+netforge run discovery.service.enumerate --host 10.0.0.1 --ports 22,80
+netforge run discovery.ping --help    # the parameters of that operation
 ```
 
 `--max-risk` is a ceiling for the whole command:
 
 ```bash
 netforge --max-risk 2 list          # only what a level-2 caller may run
-netforge --max-risk 1 run configuration.restore --request '{}'
+netforge --max-risk 1 run configuration.restore --host 10.0.0.1
 # RiskPolicyError: operation 'configuration.restore' is declared at risk level 4 ...
 ```
 

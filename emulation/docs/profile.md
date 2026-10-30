@@ -40,10 +40,14 @@ Returns the network conditions of a preset -- bad WiFi, cellular, satellite, a c
 ### From the command line
 
 ```console
-$ netforge run emulation.profile --request '{}'
+$ netforge run emulation.profile
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run emulation.profile --request '{}'
+```
 
 ### From Python
 

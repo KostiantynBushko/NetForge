@@ -48,10 +48,14 @@ Applies a network profile to an interface with the Linux traffic control tool, r
 ### From the command line
 
 ```console
-$ netforge run emulation.netem --request '{"interface": "..."}'
+$ netforge run emulation.netem --interface "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run emulation.netem --request '{"interface": "..."}'
+```
 
 ### From Python
 

@@ -37,10 +37,14 @@ Checks a configuration text for trailing whitespace, tabs, a missing final newli
 ### From the command line
 
 ```console
-$ netforge run configuration.validate --request '{"content": "..."}'
+$ netforge run configuration.validate --content "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run configuration.validate --request '{"content": "..."}'
+```
 
 ### From Python
 

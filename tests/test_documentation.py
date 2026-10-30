@@ -194,9 +194,9 @@ class TestEveryPackageHasAnEntryPoint:
 class TestTheCommandLineExamples:
     """The examples must be the ones the adapter actually takes.
 
-    The command line takes the request as a JSON object, not one flag
-    per parameter.  An example that shows the wrong command line is
-    worse than no example at all.
+    The parameters of an operation are given as flags, and the request
+    may also be given as a JSON object.  An example that shows the wrong
+    command line is worse than no example at all.
     """
 
     def the_example(self, text: str) -> str:
@@ -225,6 +225,15 @@ class TestTheCommandLineExamples:
             page = the_page_of(descriptor.name, descriptor.category.value)
             text = page.read_text(encoding="utf-8")
             assert f"$ netforge run {descriptor.name} " in text, page
+
+    def test_every_example_shows_the_parameters_as_flags(self, descriptors):
+        for descriptor in descriptors:
+            page = the_page_of(descriptor.name, descriptor.category.value)
+            text = page.read_text(encoding="utf-8")
+            schema = descriptor.request_schema or {}
+            for name in schema.get("required") or []:
+                flag = f"--{name.replace('_', '-')}"
+                assert flag in text, f"{page}: the flag {flag}"
 
 
 class TestTheTopLevelReadme:

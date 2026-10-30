@@ -43,10 +43,14 @@ Performs an HTTP request and returns the status, the headers and the body. This 
 ### From the command line
 
 ```console
-$ netforge run protocols.http.request --request '{"url": "..."}'
+$ netforge run protocols.http.request --url "..."
 ```
 
-The request is a JSON object, and the values above are placeholders.
+The values above are placeholders.  The request may also be given as a JSON object, which the flags are laid over:
+
+```console
+$ netforge run protocols.http.request --request '{"url": "..."}'
+```
 
 ### From Python
 
