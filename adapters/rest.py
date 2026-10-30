@@ -17,9 +17,10 @@ be imported -- and the adapter can be *listed* -- without it.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Any
 
-from netforge.adapters.base import Adapter
+from netforge.adapters.base import Adapter, find_missing_dependencies
 from netforge.core.context import ExecutionContext
 from netforge.core.exceptions import DependencyMissingError, NetForgeError
 from netforge.core.logging import get_logger
@@ -61,6 +62,32 @@ def _load_uvicorn():
     return uvicorn
 
 
+def _rest_requirements() -> tuple[tuple[str, Callable[[], Any]], ...]:
+    """Return the packages the REST adapter needs, and the loader for each.
+
+    The loaders are looked up when this is called rather than captured at
+    import time, so that a test can replace one of them.
+    """
+    return (("fastapi", _load_fastapi), ("uvicorn", _load_uvicorn))
+
+
+def _missing_dependencies() -> list[str]:
+    """Return the names of the packages the REST adapter needs and lacks."""
+    return find_missing_dependencies(_rest_requirements())
+
+
+def _require_rest_dependencies(feature: str) -> None:
+    """Raise unless every package the REST adapter needs is installed.
+
+    Every missing package is named at once.  They come from the same extra,
+    so a user who installs it should not have to run the command again to be
+    told about the next one.
+    """
+    missing = _missing_dependencies()
+    if missing:
+        raise DependencyMissingError(missing, extra=REST_EXTRA, feature=feature)
+
+
 class RestAdapter(Adapter):
     """The REST adapter."""
 
@@ -71,20 +98,22 @@ class RestAdapter(Adapter):
         self.registry = registry if registry is not None else OperationRegistry()
 
     def available(self) -> bool:
-        """Return ``True`` when FastAPI is installed."""
-        try:
-            _load_fastapi()
-        except DependencyMissingError:
-            return False
-        return True
+        """Return ``True`` when FastAPI and uvicorn are both installed.
+
+        Both are needed to serve the API, so an adapter that could build
+        the application but not serve it would be partial -- and a partial
+        adapter is worse than none.
+        """
+        return not _missing_dependencies()
 
     def unavailable_reason(self) -> str | None:
         """Return why the adapter is not available."""
-        try:
-            _load_fastapi()
-        except DependencyMissingError as exc:
-            return str(exc)
-        return None
+        missing = _missing_dependencies()
+        if not missing:
+            return None
+        return str(
+            DependencyMissingError(missing, extra=REST_EXTRA, feature="the REST adapter")
+        )
 
     def describe(self) -> dict[str, Any]:
         """Return a description of the adapter."""
@@ -195,7 +224,8 @@ def serve_rest(
     port: int = 8080,
 ) -> int:
     """Serve the REST API and block until it is interrupted."""
-    uvicorn = _load_uvicorn()
+    _require_rest_dependencies("serving the REST adapter")
     app = build_app(registry)
+    uvicorn = _load_uvicorn()
     uvicorn.run(app, host=host, port=port)
     return 0

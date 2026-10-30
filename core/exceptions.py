@@ -19,6 +19,8 @@ The hierarchy is split by *who* can fix the problem:
 
 from __future__ import annotations
 
+from collections.abc import Iterable
+
 __all__ = [
     "ConfigurationError",
     "DependencyMissingError",
@@ -68,18 +70,43 @@ class RiskPolicyError(NetForgeError):
 
 
 class DependencyMissingError(NetForgeError):
-    """An optional dependency required by this capability is not installed."""
+    """An optional dependency required by this capability is not installed.
 
-    def __init__(self, dependency: str, extra: str | None = None, feature: str = "") -> None:
-        self.dependency = dependency
+    More than one dependency may be named, when a single extra provides
+    several of them.  Reporting them together matters: a user who is told
+    about one dependency at a time has to run the command again after each
+    installation, to be told about the next one.
+    """
+
+    def __init__(
+        self,
+        dependency: str | Iterable[str],
+        extra: str | None = None,
+        feature: str = "",
+    ) -> None:
+        names = [dependency] if isinstance(dependency, str) else list(dependency)
+        if not names:
+            raise ValueError("at least one dependency must be named")
+        #: Every dependency that is missing.
+        self.dependencies = names
+        #: The missing dependencies, as one string.
+        self.dependency = names[0] if len(names) == 1 else " and ".join(names)
         self.extra = extra
         self.feature = feature
-        install = f"pip install 'netforge[{extra}]'" if extra else f"pip install {dependency}"
-        subject = (
-            f"the optional dependency {dependency!r} is required for {feature}"
-            if feature
-            else f"the optional dependency {dependency!r} is required here"
-        )
+        install = f"pip install 'netforge[{extra}]'" if extra else f"pip install {names[0]}"
+        if len(names) == 1:
+            subject = (
+                f"the optional dependency {names[0]!r} is required for {feature}"
+                if feature
+                else f"the optional dependency {names[0]!r} is required here"
+            )
+        else:
+            listed = " and ".join(repr(name) for name in names)
+            subject = (
+                f"the optional dependencies {listed} are required for {feature}"
+                if feature
+                else f"the optional dependencies {listed} are required here"
+            )
         super().__init__(f"{subject}. Install it with: {install}")
 
 

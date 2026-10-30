@@ -103,6 +103,17 @@ NetForgeError
 the dependency and the extra that provides it, so a missing optional
 integration reports what to install rather than an `ImportError`.
 
+It accepts more than one dependency, and names them all in the same
+message. That matters when a single extra provides several packages: a
+user told about one package at a time has to run the command again after
+each installation, to be told about the next one.
+
+```python
+DependencyMissingError(["fastapi", "uvicorn"], extra="rest", feature="serving the REST adapter")
+# the optional dependencies 'fastapi' and 'uvicorn' are required for
+# serving the REST adapter. Install it with: pip install 'netforge[rest]'
+```
+
 ---
 
 ## The command runner
@@ -162,6 +173,7 @@ class CommandRunner
 class ConfigurationError(NetForgeError)
 class Credential(name, username=None, secret=None, metadata={})
 class DependencyMissingError(NetForgeError)      (dependency, extra=None, feature='')
+                                                 dependency may be one name or a list
 class ExecutionContext(config=..., max_risk=..., credentials={}, timeout=None,
                        dry_run=False, metadata={}, command_runner=None)
 class NetForgeConfig                              (*, default_timeout=30.0, max_risk=...,

@@ -35,6 +35,20 @@ answer "install `netforge[rest]`" rather than "no module named
 not available at all. A tool that works for some capabilities and silently
 does not work for others is worse than no tool.
 
+The REST adapter needs two packages — `fastapi` to build the application
+and `uvicorn` to serve it — so it is available only when *both* are
+installed. When either is missing, the reason names every missing package
+at once, because they come from the same extra:
+
+```text
+the optional dependencies 'fastapi' and 'uvicorn' are required for the
+REST adapter. Install it with: pip install 'netforge[rest]'
+```
+
+An adapter that could build the application but not serve it would be
+partial, and `available()` says so rather than promising something the
+adapter cannot deliver.
+
 ---
 
 ## The CLI
@@ -131,6 +145,9 @@ build_parser() -> argparse.ArgumentParser
 build_server(registry=None) -> Any                      an MCP server
 build_tools(registry=None) -> list[Any]                 FunctionTool per operation
 main(argv=None) -> int                                  the `netforge` command
+
+# in netforge.adapters.base, for anyone writing an adapter
+find_missing_dependencies(requirements) -> list[str]     the names that are not installed
 ```
 
 ---

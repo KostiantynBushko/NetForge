@@ -18,18 +18,39 @@ say so when it is missing.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Callable, Iterable
 from typing import Any
 
+from netforge.core.exceptions import DependencyMissingError
 from netforge.core.logging import get_logger
 from netforge.models.risk import RiskLevel
 
-__all__ = ["Adapter", "AdapterError"]
+__all__ = ["Adapter", "AdapterError", "find_missing_dependencies"]
 
 _logger = get_logger("adapters.base")
 
 
 class AdapterError(Exception):
     """An adapter could not do what it was asked to do."""
+
+
+def find_missing_dependencies(
+    requirements: Iterable[tuple[str, Callable[[], Any]]],
+) -> list[str]:
+    """Return the names of the optional dependencies that are not installed.
+
+    ``requirements`` is a sequence of ``(name, loader)`` pairs.  Every
+    loader is called, so that one call reports *all* of the dependencies
+    that are missing rather than only the first.  An extra that provides
+    several packages should be installed once, not once per package.
+    """
+    missing: list[str] = []
+    for name, loader in requirements:
+        try:
+            loader()
+        except DependencyMissingError:
+            missing.append(name)
+    return missing
 
 
 class Adapter(ABC):
