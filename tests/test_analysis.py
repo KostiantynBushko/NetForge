@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import struct
 
+import pytest
+
 from netforge.analysis.flow import FlowAnalyzer, read_pcap
 
 
@@ -181,3 +183,21 @@ class TestAnalysisOperation:
         response = await operation.run_request({"path": str(tmp_path / "absent.pcap")})
         assert response.flows == []
         assert response.warnings
+
+
+class TestTheTimestamps:
+    """The fraction of a second is read in the right unit."""
+
+    def test_the_microsecond_fraction_is_read_as_microseconds(self, tmp_path):
+        path = tmp_path / "capture.pcap"
+        _write_pcap(
+            path,
+            [
+                (
+                    1_700_000_000.5,
+                    _tcp_packet("10.0.0.1", "10.0.0.2", 1234, 80, payload=b"x" * 10),
+                )
+            ],
+        )
+        packets = read_pcap(path)
+        assert packets[0].timestamp == pytest.approx(1_700_000_000.5, abs=0.001)

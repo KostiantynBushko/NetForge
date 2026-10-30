@@ -38,17 +38,29 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 
-#: The documentation of the project itself: the index and the architecture.
+#: The documentation of the project itself: the index, the architecture
+#: and the guides.  The documentation of a package lives in the package.
 DOCS = ROOT / "docs"
 
 
-def the_folder_of(category: str) -> Path:
+def the_folder_of(package: str) -> Path:
     """The documentation folder of a package.
 
     The documentation of a package lives *in* the package: the folder
     belongs to the code it describes, and travels with it.
     """
-    return ROOT / category / "docs"
+    return ROOT / package / "docs"
+
+
+def the_package_of(operation: str) -> str:
+    """The package an operation belongs to.
+
+    The package is the first part of the name: ``sentinel.network.analyse``
+    belongs to ``sentinel``.  The category is a different thing -- the
+    kind of capability -- and two packages may publish operations of the
+    same category.
+    """
+    return operation.split(".", 1)[0]
 
 #: The marker that opens a generated block.
 BEGIN = "<!-- generated:{name} -->"
@@ -366,9 +378,9 @@ def the_signature_of(member: Any) -> str:
     return f"= {rendered}"
 
 
-def the_page_name(operation: str, category: str) -> str:
+def the_page_name(operation: str, package: str) -> str:
     """The file name of the page of an operation."""
-    prefix = f"{category}."
+    prefix = f"{package}."
     if operation.startswith(prefix):
         return operation[len(prefix):]
     return operation
@@ -572,7 +584,7 @@ def the_operations_block(descriptors: list[Any]) -> str:
     ]
     for descriptor in descriptors:
         risk_label = descriptor.risk_level.label
-        page = the_page_name(descriptor.name, descriptor.category.value)
+        page = the_page_name(descriptor.name, the_package_of(descriptor.name))
         lines.append(
             f"| [`{descriptor.name}`]({page}.md) | {risk_label} | "
             f"{descriptor.summary} |"
@@ -629,18 +641,18 @@ def write_if_changed(path: Path, text: str, write: bool = True) -> bool:
 def generate(write: bool = True) -> list[str]:
     """Generate the documentation.  Returns the files that changed."""
     descriptors = the_descriptors()
-    by_category: dict[str, list[Any]] = {}
+    by_package: dict[str, list[Any]] = {}
     for descriptor in descriptors:
-        by_category.setdefault(descriptor.category.value, []).append(descriptor)
+        by_package.setdefault(the_package_of(descriptor.name), []).append(descriptor)
 
     changed: list[str] = []
 
-    for category, category_descriptors in sorted(by_category.items()):
-        folder = the_folder_of(category)
+    for package, package_descriptors in sorted(by_package.items()):
+        folder = the_folder_of(package)
 
         # -- the operation pages -----------------------------------------
-        for descriptor in category_descriptors:
-            page = folder / f"{the_page_name(descriptor.name, category)}.md"
+        for descriptor in package_descriptors:
+            page = folder / f"{the_page_name(descriptor.name, package)}.md"
             text = the_operation_page(descriptor)
             if write_if_changed(page, text, write=write):
                 changed.append(str(page.relative_to(ROOT)))
@@ -651,9 +663,9 @@ def generate(write: bool = True) -> list[str]:
             continue
         text = entry.read_text(encoding="utf-8")
         text = replace_block(
-            text, "operations", the_operations_block(category_descriptors)
+            text, "operations", the_operations_block(package_descriptors)
         )
-        text = replace_block(text, "public-api", the_public_api_block(category))
+        text = replace_block(text, "public-api", the_public_api_block(package))
         if write_if_changed(entry, text, write=write):
             changed.append(str(entry.relative_to(ROOT)))
 

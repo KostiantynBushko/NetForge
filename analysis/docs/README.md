@@ -87,7 +87,9 @@ class FlowAnalysisOperation()
 class FlowAnalysisRequest(*, path: str, top: int = 50)
 class FlowAnalysisResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], path: str, flows: list[dict[str, object]] = [], statistics: dict[str, object] = {})
 class FlowAnalyzer(*, top: int = 50)
-class Packet(timestamp: float, length: int, protocol: str = '', source: str = '', destination: str = '', source_port: int | None = None, destination_port: int | None = None, info: str = '')
+class Packet(timestamp: float, length: int, protocol: str = '', source: str = '', destination: str = '', source_port: int | None = None, destination_port: int | None = None, info: str = '', payload_length: int = 0)
+class PcapDecoder(name: str = 'the stream')
+def decode_packet(payload: bytes, timestamp: float, original_len: int, link_type: int) -> Packet
 def read_pcap(path: str | Path) -> list[Packet]
 ```
 <!-- /generated:public-api -->

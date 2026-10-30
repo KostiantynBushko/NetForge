@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+
 from netforge.core.context import ExecutionContext
 from netforge.discovery import nmap
 from netforge.models.scanning import (

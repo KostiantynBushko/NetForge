@@ -19,12 +19,13 @@ never apart.
 |---|---|
 | [The architecture](ARCHITECTURE.md) | How is the code put together, and why? Where does each principle live? |
 | [Getting started](../README.md) | How do I install it and run it? |
+| [Testing the sentinel](SENTINEL.md) | How do I watch one machine and scan another, and see the scan reported? |
 
 ---
 
 ## The capability packages
 
-These ten packages publish the thirty operations that `netforge list`
+These eleven packages publish the thirty-four operations that `netforge list`
 prints. Each has a folder of its own, inside the package: the entry point
 is the `README.md` of the folder, and every operation it publishes has a
 page of its own.
@@ -41,6 +42,7 @@ page of its own.
 | `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](../security/docs/README.md) |
 | `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](../manipulation/docs/README.md) |
 | `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](../emulation/docs/README.md) |
+| `netforge.sentinel` | 4 | Watching for scans: live, over a capture, and over the logs. | [sentinel](../sentinel/docs/README.md) |
 
 ---
 

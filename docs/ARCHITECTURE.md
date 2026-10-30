@@ -77,7 +77,8 @@ This is the property the rest of the design exists to serve.
 ├──────────────────────────────────────────────────────────────┤
 │  capability     connectivity · discovery · dns · protocols    │
 │  packages       capture · analysis · configuration ·          │
-│                 security · manipulation · emulation           │
+│                 security · manipulation · emulation ·          │
+│                 sentinel                                       │
 ├──────────────────────────────────────────────────────────────┤
 │  core/          operation · context · config · runner · native│
 │  models/        request · response · risk · category          │

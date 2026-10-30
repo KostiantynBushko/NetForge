@@ -39,6 +39,7 @@ PACKAGES = [
     "dns",
     "emulation",
     "manipulation",
+    "sentinel",
     "models",
     "plugins",
     "protocols",
@@ -66,10 +67,14 @@ def descriptors(registry):
 
 
 def the_packages(descriptors) -> dict[str, list]:
-    """The operations grouped by the package that publishes them."""
+    """The operations grouped by the package that publishes them.
+
+    The package is the first part of the name of the operation, not its
+    category: two packages may publish operations of the same category.
+    """
     grouped: dict[str, list] = {}
     for descriptor in descriptors:
-        grouped.setdefault(descriptor.category.value, []).append(descriptor)
+        grouped.setdefault(descriptor.name.split(".", 1)[0], []).append(descriptor)
     return grouped
 
 
@@ -83,11 +88,12 @@ def the_entry_of(package: str) -> Path:
     return the_folder_of(package) / "README.md"
 
 
-def the_page_of(operation: str, category: str) -> Path:
+def the_page_of(operation: str) -> Path:
     """The path of the page of an operation."""
-    prefix = f"{category}."
+    package = operation.split(".", 1)[0]
+    prefix = f"{package}."
     name = operation[len(prefix):] if operation.startswith(prefix) else operation
-    return the_folder_of(category) / f"{name}.md"
+    return the_folder_of(package) / f"{name}.md"
 
 
 class TestTheDocumentationLivesInThePackage:
@@ -113,8 +119,11 @@ class TestTheDocumentationLivesInThePackage:
             assert entry.parent.parent.name == package, entry
 
     def test_no_documentation_is_left_in_the_project_folder(self):
+        # The root folder holds the documents of the project itself: the
+        # index, the architecture, and the guides.  The documentation of
+        # a package lives in the package.
         loose = sorted(path.name for path in DOCS.glob("*.md"))
-        assert loose == ["ARCHITECTURE.md", "README.md"], loose
+        assert loose == ["ARCHITECTURE.md", "README.md", "SENTINEL.md"], loose
 
 
 class TestEveryOperationHasAPage:
@@ -124,31 +133,31 @@ class TestEveryOperationHasAPage:
         missing = [
             descriptor.name
             for descriptor in descriptors
-            if not the_page_of(descriptor.name, descriptor.category.value).is_file()
+            if not the_page_of(descriptor.name).is_file()
         ]
         assert missing == [], f"these operations have no page: {missing}"
 
     def test_the_page_names_the_operation(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             assert f"# `{descriptor.name}`" in text, page
 
     def test_the_page_carries_the_summary(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             assert descriptor.summary in text, page
 
     def test_the_page_carries_the_risk(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             assert descriptor.risk_level.label in text, page
 
     def test_the_page_documents_every_request_parameter(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             properties = (descriptor.request_schema or {}).get("properties") or {}
             for name in properties:
@@ -156,7 +165,7 @@ class TestEveryOperationHasAPage:
 
     def test_the_page_documents_every_response_field(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             properties = (descriptor.response_schema or {}).get("properties") or {}
             for name in properties:
@@ -164,7 +173,7 @@ class TestEveryOperationHasAPage:
 
     def test_the_page_links_to_the_package(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             assert "](README.md)" in text, page
 
@@ -173,22 +182,22 @@ class TestEveryPackageHasAnEntryPoint:
     """The folders of the packages."""
 
     def test_the_entry_point_lists_every_operation(self, descriptors):
-        for category, operations in the_packages(descriptors).items():
-            text = the_entry_of(category).read_text(encoding="utf-8")
+        for package, operations in the_packages(descriptors).items():
+            text = the_entry_of(package).read_text(encoding="utf-8")
             for descriptor in operations:
-                assert descriptor.name in text, f"{category}: {descriptor.name}"
+                assert descriptor.name in text, f"{package}: {descriptor.name}"
 
     def test_the_entry_point_lists_the_public_api(self, descriptors):
-        for category in the_packages(descriptors):
-            text = the_entry_of(category).read_text(encoding="utf-8")
-            assert "<!-- generated:public-api -->" in text, category
+        for package in the_packages(descriptors):
+            text = the_entry_of(package).read_text(encoding="utf-8")
+            assert "<!-- generated:public-api -->" in text, package
 
     def test_the_entry_point_links_to_its_operations(self, descriptors):
-        for category, operations in the_packages(descriptors).items():
-            text = the_entry_of(category).read_text(encoding="utf-8")
+        for package, operations in the_packages(descriptors).items():
+            text = the_entry_of(package).read_text(encoding="utf-8")
             for descriptor in operations:
-                page = the_page_of(descriptor.name, category)
-                assert f"]({page.name})" in text, f"{category}: {descriptor.name}"
+                page = the_page_of(descriptor.name)
+                assert f"]({page.name})" in text, f"{package}: {descriptor.name}"
 
 
 class TestTheCommandLineExamples:
@@ -207,13 +216,13 @@ class TestTheCommandLineExamples:
 
     def test_every_example_is_valid_json(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             payload = json.loads(self.the_example(page.read_text(encoding="utf-8")))
             assert isinstance(payload, dict), page
 
     def test_every_example_carries_the_required_parameters(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             payload = json.loads(self.the_example(text))
             schema = descriptor.request_schema or {}
@@ -222,13 +231,13 @@ class TestTheCommandLineExamples:
 
     def test_every_example_names_the_operation(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             assert f"$ netforge run {descriptor.name} " in text, page
 
     def test_every_example_shows_the_parameters_as_flags(self, descriptors):
         for descriptor in descriptors:
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             text = page.read_text(encoding="utf-8")
             schema = descriptor.request_schema or {}
             for name in schema.get("required") or []:
@@ -296,5 +305,5 @@ class TestTheGeneratorIsHonest:
 
         for descriptor in descriptors:
             text = generate_docs.the_operation_page(descriptor)
-            page = the_page_of(descriptor.name, descriptor.category.value)
+            page = the_page_of(descriptor.name)
             assert text == page.read_text(encoding="utf-8"), page

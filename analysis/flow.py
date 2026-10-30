@@ -37,6 +37,8 @@ __all__ = [
     "FlowAnalyzer",
     "FlowAnalysisOperation",
     "Packet",
+    "PcapDecoder",
+    "decode_packet",
     "read_pcap",
 ]
 
@@ -63,6 +65,7 @@ class Packet:
     source_port: int | None = None
     destination_port: int | None = None
     info: str = ""
+    payload_length: int = 0
 
 
 @dataclass(slots=True)
@@ -123,44 +126,80 @@ def _ipv6_to_str(raw: bytes) -> str:
     return ":".join(groups)
 
 
-def _parse_pcap_file(path: Path) -> tuple[int, list[Packet]]:
-    """Read a libpcap file and return its link type and its packets."""
-    data = path.read_bytes()
-    if len(data) < 24:
-        raise ValueError(f"{path} is too short to be a capture file")
+class PcapDecoder:
+    """Reads the packets out of a libpcap stream, a chunk at a time.
 
-    magic = data[:4]
-    if magic == b"\xd4\xc3\xb2\xa1":
-        endian, nanoseconds = "<", True
-    elif magic == b"\xa1\xb2\xc3\xd4":
-        endian, nanoseconds = ">", True
-    elif magic == b"\x4d\x3c\xb2\xa1":
-        endian, nanoseconds = "<", False
-    elif magic == b"\xa1\xb2\x3c\x4d":
-        endian, nanoseconds = ">", False
-    else:
-        raise ValueError(f"{path} is not a libpcap file (the magic is {magic.hex()})")
+    A capture that is still being written is not a file yet, so the
+    decoder takes the bytes as they arrive and hands back the packets it
+    can already read.  What it cannot use yet it keeps.
+    """
 
-    link_type = struct.unpack_from(f"{endian}I", data, 20)[0]
-    offset = 24
-    packets: list[Packet] = []
+    def __init__(self, name: str = "the stream") -> None:
+        self.name = name
+        self._buffer = bytearray()
+        self._endian = "<"
+        self._nanoseconds = True
+        self._link_type = LINKTYPE_ETHERNET
+        self._header_read = False
 
-    header = struct.Struct(f"{endian}IIII")
-    while offset + 16 <= len(data):
-        seconds, fraction, captured_len, original_len = header.unpack_from(data, offset)
-        offset += 16
-        payload = data[offset : offset + captured_len]
-        offset += captured_len
-        if len(payload) < captured_len:
-            break
+    @property
+    def link_type(self) -> int:
+        """The link type of the capture."""
+        return self._link_type
 
-        timestamp = seconds + (fraction / 1_000_000_000.0 if nanoseconds else fraction / 1_000_000.0)
-        packets.append(_decode_packet(payload, timestamp, original_len, link_type))
+    def feed(self, chunk: bytes) -> list[Packet]:
+        """Give the decoder more bytes; it returns the packets it can read."""
+        self._buffer.extend(chunk)
+        if not self._header_read:
+            if len(self._buffer) < 24:
+                return []
+            self._read_header()
 
-    return link_type, packets
+        packets: list[Packet] = []
+        header = struct.Struct(f"{self._endian}IIII")
+        while len(self._buffer) >= 16:
+            seconds, fraction, captured_len, original_len = header.unpack_from(self._buffer, 0)
+            if len(self._buffer) < 16 + captured_len:
+                break
+            payload = bytes(self._buffer[16 : 16 + captured_len])
+            del self._buffer[: 16 + captured_len]
+            fraction_of_second = (
+                fraction / 1_000_000_000.0 if self._nanoseconds else fraction / 1_000_000.0
+            )
+            packets.append(
+                decode_packet(payload, seconds + fraction_of_second, original_len, self._link_type)
+            )
+        return packets
+
+    def finish(self) -> list[Packet]:
+        """Read whatever is left; a truncated packet is dropped."""
+        packets = self.feed(b"")
+        self._buffer.clear()
+        return packets
+
+    def _read_header(self) -> None:
+        magic = bytes(self._buffer[:4])
+        # The two microsecond magics and the two nanosecond ones, little
+        # and big endian.
+        if magic == b"\xd4\xc3\xb2\xa1":
+            endian, nanoseconds = "<", False
+        elif magic == b"\xa1\xb2\xc3\xd4":
+            endian, nanoseconds = ">", False
+        elif magic == b"\x4d\x3c\xb2\xa1":
+            endian, nanoseconds = "<", True
+        elif magic == b"\xa1\xb2\x3c\x4d":
+            endian, nanoseconds = ">", True
+        else:
+            raise ValueError(f"{self.name} is not a libpcap file (the magic is {magic.hex()})")
+
+        self._endian = endian
+        self._nanoseconds = nanoseconds
+        self._link_type = struct.unpack_from(f"{endian}I", self._buffer, 20)[0]
+        del self._buffer[:24]
+        self._header_read = True
 
 
-def _decode_packet(payload: bytes, timestamp: float, original_len: int, link_type: int) -> Packet:
+def decode_packet(payload: bytes, timestamp: float, original_len: int, link_type: int) -> Packet:
     """Decode one captured frame."""
     packet = Packet(timestamp=timestamp, length=original_len)
 
@@ -209,10 +248,14 @@ def _decode_ipv4(payload: bytes, offset: int, packet: Packet) -> Packet:
         if len(payload) >= transport + 14:
             flags = payload[transport + 13]
             packet.info = _tcp_flags(flags)
+            # The data offset is in the high nibble of the 13th byte.
+            data_offset = (flags and payload[transport + 12] >> 4) * 4
+            packet.payload_length = max(0, len(payload) - transport - (data_offset or 20))
     elif protocol == IPPROTO_UDP and len(payload) >= transport + 4:
         packet.source_port = struct.unpack_from("!H", payload, transport)[0]
         packet.destination_port = struct.unpack_from("!H", payload, transport + 2)[0]
         packet.info = f"len={struct.unpack_from('!H', payload, transport + 4)[0]}" if len(payload) >= transport + 6 else ""
+        packet.payload_length = max(0, len(payload) - transport - 8)
     elif protocol == IPPROTO_ICMP:
         if len(payload) >= transport + 1:
             packet.info = f"type={payload[transport]}"
@@ -233,6 +276,9 @@ def _decode_ipv6(payload: bytes, offset: int, packet: Packet) -> Packet:
     if next_header == IPPROTO_TCP and len(payload) >= transport + 4:
         packet.source_port = struct.unpack_from("!H", payload, transport)[0]
         packet.destination_port = struct.unpack_from("!H", payload, transport + 2)[0]
+        if len(payload) >= transport + 14:
+            data_offset = (payload[transport + 12] >> 4) * 4
+            packet.payload_length = max(0, len(payload) - transport - (data_offset or 20))
     elif next_header == IPPROTO_UDP and len(payload) >= transport + 4:
         packet.source_port = struct.unpack_from("!H", payload, transport)[0]
         packet.destination_port = struct.unpack_from("!H", payload, transport + 2)[0]
@@ -249,7 +295,12 @@ def _tcp_flags(flags: int) -> str:
 
 def read_pcap(path: str | Path) -> list[Packet]:
     """Read a libpcap file and return its packets."""
-    _link_type, packets = _parse_pcap_file(Path(path))
+    data = Path(path).read_bytes()
+    if len(data) < 24:
+        raise ValueError(f"{path} is too short to be a capture file")
+    decoder = PcapDecoder(str(path))
+    packets = decoder.feed(data)
+    packets.extend(decoder.finish())
     return packets
 
 

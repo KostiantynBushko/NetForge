@@ -180,6 +180,39 @@ response says so. The levels are described in
 
 ---
 
+## The sentinel
+
+A scan is loud. The **sentinel** is the part of NetForge that listens
+for one: it watches an interface while it runs, it reads a capture that
+has already been made, and it reads the logs the machines write — the
+authentication log, the firewall's log, the web server's access log.
+
+```bash
+# live, on the machine being watched
+sudo netforge run sentinel.network.monitor --interface wlo1 --duration 3600 \
+  --output /var/lib/netforge/live.pcap --sink /var/lib/netforge/alerts.jsonl
+
+# afterwards, from the capture it wrote
+netforge run sentinel.network.analyse --path /var/lib/netforge/live.pcap
+
+# and from the logs
+netforge run sentinel.log.analyse --path /var/log/auth.log
+```
+
+What it reports is a **suspicion**, not a proof: that one address
+touched many ports in a short time, that many ports were refused
+without the handshake completing, that one address failed to log in
+many times. The evidence is in the alert, so that a person can judge
+it.
+
+The monitor is a convenience; the analyser is the truth. A capture is a
+record, and a record can be read again.
+
+The guide for trying it with two machines is in
+[the documentation](docs/SENTINEL.md).
+
+---
+
 ## The architecture
 
 The framework is a set of packages, one per capability:
@@ -307,6 +340,7 @@ folder, inside the package.
 | `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](security/docs/README.md) |
 | `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](manipulation/docs/README.md) |
 | `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](emulation/docs/README.md) |
+| `netforge.sentinel` | 4 | Watching for scans: live, over a capture, and over the logs. | [sentinel](sentinel/docs/README.md) |
 
 ### The framework
 

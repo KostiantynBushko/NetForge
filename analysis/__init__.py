@@ -14,6 +14,8 @@ from netforge.analysis.flow import (
     FlowAnalysisRequest,
     FlowAnalysisResponse,
     Packet,
+    PcapDecoder,
+    decode_packet,
     read_pcap,
 )
 
@@ -24,5 +26,7 @@ __all__ = [
     "FlowAnalysisResponse",
     "FlowAnalyzer",
     "Packet",
+    "PcapDecoder",
+    "decode_packet",
     "read_pcap",
 ]
