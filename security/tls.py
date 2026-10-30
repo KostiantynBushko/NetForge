@@ -157,14 +157,14 @@ class TlsInspectRequest(RequestModel):
 class TlsInspectResponse(ResponseModel):
     """Response of :class:`TlsInspectionOperation`."""
 
-    host: str
-    port: int
-    version: str = ""
-    cipher: str = ""
-    peer_certificate: dict[str, object] = Field(default_factory=dict)
-    subject_alternative_names: list[str] = Field(default_factory=list)
-    verified: bool = False
-    error: str | None = None
+    host: str = Field(description="The host that was inspected.")
+    port: int = Field(description="The port that was inspected.")
+    version: str = Field(default="", description="The TLS version that was negotiated.")
+    cipher: str = Field(default="", description="The cipher that was negotiated.")
+    peer_certificate: dict[str, object] = Field(default_factory=dict, description="The certificate the other end presented.")
+    subject_alternative_names: list[str] = Field(default_factory=list, description="The alternative names of the certificate.")
+    verified: bool = Field(default=False, description="Whether the certificate could be verified.")
+    error: str | None = Field(default=None, description="Why the inspection failed, when it did.")
 
 
 class TlsInspectionOperation(Operation[TlsInspectRequest, TlsInspectResponse]):

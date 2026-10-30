@@ -97,13 +97,13 @@ class TcpConnectRequest(RequestModel):
 class TcpConnectResponse(ResponseModel):
     """Response of :class:`TcpConnectOperation`."""
 
-    host: str
-    port: int
-    reachable: bool
-    latency_ms: float | None = None
-    local_address: str | None = None
-    peer_address: str | None = None
-    error: str | None = None
+    host: str = Field(description="The host that was reached.")
+    port: int = Field(description="The port that was reached.")
+    reachable: bool = Field(description="Whether the connection succeeded.")
+    latency_ms: float | None = Field(default=None, description="How long the connection took, in milliseconds.")
+    local_address: str | None = Field(default=None, description="The address the connection was made from.")
+    peer_address: str | None = Field(default=None, description="The address of the other end.")
+    error: str | None = Field(default=None, description="Why the connection failed, when it did.")
 
 
 class TcpConnectOperation(Operation[TcpConnectRequest, TcpConnectResponse]):

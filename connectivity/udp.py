@@ -123,13 +123,13 @@ class UdpProbeRequest(RequestModel):
 class UdpProbeResponse(ResponseModel):
     """Response of :class:`UdpProbeOperation`."""
 
-    host: str
-    port: int
-    replied: bool
-    latency_ms: float | None = None
-    reply: str | None = None
-    reply_bytes: int = 0
-    error: str | None = None
+    host: str = Field(description="The host that was probed.")
+    port: int = Field(description="The port that was probed.")
+    replied: bool = Field(description="Whether the host answered.")
+    latency_ms: float | None = Field(default=None, description="How long the answer took, in milliseconds.")
+    reply: str | None = Field(default=None, description="The datagram that came back.")
+    reply_bytes: int = Field(default=0, description="How many bytes the answer holds.")
+    error: str | None = Field(default=None, description="Why the probe failed, when it did.")
 
 
 class UdpProbeOperation(Operation[UdpProbeRequest, UdpProbeResponse]):

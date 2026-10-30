@@ -95,12 +95,12 @@ class HttpProtocolRequest(RequestModel):
 class HttpProtocolResponse(ResponseModel):
     """Response of :class:`HttpProtocolOperation`."""
 
-    url: str
-    method: str
-    status: int
-    headers: dict[str, str] = Field(default_factory=dict)
-    body: str = ""
-    elapsed_ms: float = 0.0
+    url: str = Field(description="The URL that was requested.")
+    method: str = Field(description="The HTTP method that was used.")
+    status: int = Field(description="The status code of the response.")
+    headers: dict[str, str] = Field(default_factory=dict, description="The headers of the response.")
+    body: str = Field(default="", description="The body of the response.")
+    elapsed_ms: float = Field(default=0.0, description="How long the request took, in milliseconds.")
 
 
 class HttpProtocolOperation(Operation[HttpProtocolRequest, HttpProtocolResponse]):

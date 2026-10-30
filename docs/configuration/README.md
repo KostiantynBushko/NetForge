@@ -10,12 +10,14 @@ one changes the device and is declared at the system modification level.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `configuration.backup` | Safe | Read a configuration file off a device over SSH. |
-| `configuration.validate` | Safe | Check a configuration text for the problems that break a device. |
-| `configuration.diff` | Safe | Compare two configuration texts and report the difference. |
-| `configuration.restore` | **System modification** | Write a configuration file onto a device over SSH. |
+| [`configuration.backup`](backup.md) | Safe | Read a configuration file off a device over SSH. |
+| [`configuration.diff`](diff.md) | Safe | Compare two configuration texts and report the difference. |
+| [`configuration.restore`](restore.md) | System Modification | Write a configuration file onto a device over SSH. |
+| [`configuration.validate`](validate.md) | Safe | Check a configuration text for the problems that break a device. |
+<!-- /generated:operations -->
 
 `configuration.restore` is the only operation in the whole catalogue that
 writes to a remote device, and it sits at the top of the risk model for
@@ -68,16 +70,17 @@ report = await diff.run(before=current.text, after=candidate)
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class ConfigurationBackupOperation
-class ConfigurationDiffOperation
-class ConfigurationRestoreOperation
-class ConfigurationValidateOperation
-class ValidationIssue                       (severity, message, line=None)
-
-diff_configurations(before, after, *, name='configuration') -> list[str]
-validate_configuration(text) -> list[ValidationIssue]
+class ConfigurationBackupOperation()
+class ConfigurationDiffOperation()
+class ConfigurationRestoreOperation()
+class ConfigurationValidateOperation()
+class ValidationIssue(severity: str, message: str, line: int | None = None)
+def diff_configurations(before: str, after: str, *, name: str = 'configuration') -> list[str]
+def validate_configuration(text: str) -> list[ValidationIssue]
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -91,5 +94,5 @@ validate_configuration(text) -> list[ValidationIssue]
 * The validation rules cover the problems that break a device — a missing
   interface, an address that is not on the subnet, a duplicate route —
   not the whole grammar of every vendor's configuration language.
-* See also: [the architecture](ARCHITECTURE.md),
-  [connectivity.md](connectivity.md), [dns.md](dns.md).
+* See also: [the architecture](../ARCHITECTURE.md),
+  [connectivity.md](../connectivity/README.md), [dns.md](../dns/README.md).

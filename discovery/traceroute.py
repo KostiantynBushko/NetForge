@@ -76,9 +76,9 @@ class TracerouteRequest(RequestModel):
 class TracerouteResponse(ResponseModel):
     """Response of :class:`TracerouteOperation`."""
 
-    host: str
-    hops: list[dict[str, object]] = Field(default_factory=list)
-    reached: bool = False
+    host: str = Field(description="The host that was traced.")
+    hops: list[dict[str, object]] = Field(default_factory=list, description="The hops of the path.")
+    reached: bool = Field(default=False, description="Whether the host was reached.")
 
 
 class TracerouteOperation(Operation[TracerouteRequest, TracerouteResponse]):

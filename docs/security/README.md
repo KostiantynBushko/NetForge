@@ -20,12 +20,14 @@ target, and the risk model is about what the other side notices.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `security.portscan` | Observability | Scan the TCP ports of a host and report which of them are open. |
-| `security.banner` | Observability | Read the banner a service sends when a client connects. |
-| `security.tls.inspect` | Safe | Inspect the TLS version, the cipher and the certificate of an endpoint. |
-| `security.headers.analyze` | Safe | Analyse the security headers of an HTTP response. |
+| [`security.banner`](banner.md) | Observability | Read the banner a service sends when a client connects. |
+| [`security.headers.analyze`](headers.analyze.md) | Safe | Analyse the security headers of an HTTP response. |
+| [`security.portscan`](portscan.md) | Observability | Scan the TCP ports of a host and report which of them are open. |
+| [`security.tls.inspect`](tls.inspect.md) | Safe | Inspect the TLS version, the cipher and the certificate of an endpoint. |
+<!-- /generated:operations -->
 
 ---
 
@@ -107,21 +109,20 @@ print(result.open_ports)
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class BannerGrabOperation
-class HttpHeaderAnalysisOperation
-class PortScanRequest                   (*, host, ports=[], timeout=2.0, concurrency=64)
-class PortScanResponse                  (*, operation='', risk_level='', duration_ms=0.0,
-                                        warnings=[], host, results=[], open_ports=[],
-                                        closed_ports=[], filtered_ports=[], scanned=0)
-class PortScannerOperation
-class TlsInspectionOperation
-
-SECURITY_HEADERS: dict
-analyze_headers(headers) -> list[HeaderFinding]
-grab_banner(host, port, *, probe=None, timeout=3.0, read_size=1024) -> tuple[str | None, bytes | None]
-inspect_tls(host, port=443, *, timeout=5.0, verify=False, server_hostname=None) -> TlsReport
+class BannerGrabOperation()
+class HttpHeaderAnalysisOperation()
+class PortScanRequest(*, host: str, ports: list[int] | str = [22, 80, 443], timeout: float | None = 2.0, concurrency: int = 64)
+class PortScanResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], host: str, results: list[dict[str, object]] = [], open_ports: list[int] = [], closed_ports: list[int] = [], filtered_ports: list[int] = [], scanned: int = 0)
+class PortScannerOperation()
+SECURITY_HEADERS = {'strict-transport-security': 'The connection is not pinn...
+class TlsInspectionOperation()
+def analyze_headers(headers: dict[str, str]) -> list[HeaderFinding]
+def grab_banner(host: str, port: int, *, probe: bytes | None = None, timeout: float = 3.0, read_size: int = 1024) -> tuple[str | None, bytes | None]
+def inspect_tls(host: str, port: int = 443, *, timeout: float = 5.0, verify: bool = False, server_hostname: str | None = None) -> TlsReport
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -148,5 +149,5 @@ from netforge.security.tls import TlsReport
   denial-of-service tool.
 * `security.headers.analyze` works on a header dictionary, so it can be
   pointed at a response captured earlier without re-fetching it.
-* See also: [the architecture](ARCHITECTURE.md),
-  [discovery.md](discovery.md), [connectivity.md](connectivity.md).
+* See also: [the architecture](../ARCHITECTURE.md),
+  [discovery.md](../discovery/README.md), [connectivity.md](../connectivity/README.md).

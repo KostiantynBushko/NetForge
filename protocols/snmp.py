@@ -357,11 +357,11 @@ class SnmpGetRequest(RequestModel):
 class SnmpGetResponse(ResponseModel):
     """Response of :class:`SnmpGetOperation`."""
 
-    host: str
-    oid: str
-    error_status: int = 0
-    error_name: str = "noError"
-    values: list[dict[str, object]] = Field(default_factory=list)
+    host: str = Field(description="The agent that was queried.")
+    oid: str = Field(description="The OID that was read.")
+    error_status: int = Field(default=0, description="The error status of the response.")
+    error_name: str = Field(default="noError", description="The name of the error status.")
+    values: list[dict[str, object]] = Field(default_factory=list, description="The values that came back.")
 
 
 class SnmpGetOperation(Operation[SnmpGetRequest, SnmpGetResponse]):

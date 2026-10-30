@@ -97,9 +97,9 @@ class ArpTableRequest(RequestModel):
 class ArpTableResponse(ResponseModel):
     """Response of :class:`ArpTableOperation`."""
 
-    entries: list[dict[str, str]] = Field(default_factory=list)
-    source: str = ""
-    total: int = 0
+    entries: list[dict[str, str]] = Field(default_factory=list, description="The neighbours in the table.")
+    source: str = Field(default="", description="Where the table was read from.")
+    total: int = Field(default=0, description="How many neighbours there are.")
 
 
 class ArpTableOperation(Operation[ArpTableRequest, ArpTableResponse]):

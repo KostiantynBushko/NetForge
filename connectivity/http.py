@@ -156,15 +156,15 @@ class HttpRequestRequest(RequestModel):
 class HttpRequestResponse(ResponseModel):
     """Response of :class:`HttpRequestOperation`."""
 
-    url: str
-    method: str
-    status: int
-    reason: str = ""
-    headers: dict[str, str] = Field(default_factory=dict)
-    body: str = ""
-    body_bytes: int = 0
-    truncated: bool = False
-    elapsed_ms: float = 0.0
+    url: str = Field(description="The URL that was requested.")
+    method: str = Field(description="The HTTP method that was used.")
+    status: int = Field(description="The status code of the response.")
+    reason: str = Field(default="", description="The reason phrase that came with the status.")
+    headers: dict[str, str] = Field(default_factory=dict, description="The headers of the response.")
+    body: str = Field(default="", description="The body of the response.")
+    body_bytes: int = Field(default=0, description="How many bytes the body holds.")
+    truncated: bool = Field(default=False, description="Whether the body was cut short.")
+    elapsed_ms: float = Field(default=0.0, description="How long the request took, in milliseconds.")
 
 
 class HttpRequestOperation(Operation[HttpRequestRequest, HttpRequestResponse]):

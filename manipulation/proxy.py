@@ -166,10 +166,10 @@ class ProxyRequest(RequestModel):
 class ProxyResponse(ResponseModel):
     """Response of :class:`ProxyOperation`."""
 
-    listen_host: str
-    listen_port: int
-    upstream: str
-    statistics: dict[str, object] = Field(default_factory=dict)
+    listen_host: str = Field(description="The address the proxy listens on.")
+    listen_port: int = Field(description="The port the proxy listens on.")
+    upstream: str = Field(description="The host and port the traffic is forwarded to.")
+    statistics: dict[str, object] = Field(default_factory=dict, description="What the proxy has forwarded so far.")
 
 
 class ProxyOperation(Operation[ProxyRequest, ProxyResponse]):

@@ -335,11 +335,11 @@ class DnsDiagnosticsRequest(RequestModel):
 class DnsDiagnosticsResponse(ResponseModel):
     """Response of :class:`DnsDiagnosticsOperation`."""
 
-    domain: str
-    spf: dict[str, object] = Field(default_factory=dict)
-    dmarc: dict[str, object] = Field(default_factory=dict)
-    findings: list[str] = Field(default_factory=list)
-    score: int = Field(default=0, ge=0, le=100)
+    domain: str = Field(description="The domain that was diagnosed.")
+    spf: dict[str, object] = Field(default_factory=dict, description="The SPF policy of the domain.")
+    dmarc: dict[str, object] = Field(default_factory=dict, description="The DMARC policy of the domain.")
+    findings: list[str] = Field(default_factory=list, description="What the diagnostics found.")
+    score: int = Field(default=0, ge=0, le=100, description="The score of the domain, from 0 to 100.")
 
 
 class DnsDiagnosticsOperation(Operation[DnsDiagnosticsRequest, DnsDiagnosticsResponse]):

@@ -16,12 +16,14 @@ so the rest of the framework works on a machine without it.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `connectivity.tcp.connect` | Safe | Open a TCP connection to a host and port and report whether it succeeded. |
-| `connectivity.udp.probe` | Observability | Send a UDP datagram to a host and report whether it answered. |
-| `connectivity.http.request` | Safe | Perform an HTTP request and report the status, headers and body. |
-| `connectivity.ssh.execute` | Manipulation | Run a shell command on a remote host over SSH. |
+| [`connectivity.http.request`](http.request.md) | Safe | Perform an HTTP request and report the status, headers and body. |
+| [`connectivity.ssh.execute`](ssh.execute.md) | Manipulation | Run a shell command on a remote host over SSH. |
+| [`connectivity.tcp.connect`](tcp.connect.md) | Safe | Open a TCP connection to a host and port and report whether it succeeded. |
+| [`connectivity.udp.probe`](udp.probe.md) | Observability | Send a UDP datagram to a host and report whether it answered. |
+<!-- /generated:operations -->
 
 A TCP connect is declared *safe* because it opens a connection and closes
 it again, without sending anything the other side would notice. A UDP
@@ -34,10 +36,20 @@ probe is one level higher: sending a datagram is visible to the target.
 `Connection` is the base class, and `ConnectionState` is the lifecycle
 state it moves through.
 
+<!-- generated:public-api -->
 ```text
-NEW → CONNECTING → CONNECTED → CLOSED
-                    ↘ FAILED
+class Connection(*, timeout: float | None = 30.0)
+class ConnectionResult(ok: bool, stdout: str = '', stderr: str = '', exit_code: int | None = None, duration_ms: float = 0.0, metadata: dict[str, Any] = <factory>)
+class ConnectionState()
+class HttpConnection(*, timeout: float | None = 30.0, verify_tls: bool = True, user_agent: str = 'netforge/0.1.0', headers: dict[str, str] | None = None)
+class HttpRequestOperation()
+class TcpConnectOperation()
+class TcpConnection(host: str, port: int, *, timeout: float | None = 30.0)
+class UdpConnection(host: str, port: int, *, local_host: str = '0.0.0.0', local_port: int = 0, timeout: float | None = 30.0)
+class UdpProbeOperation()
+class WebSocketConnection(url: str, *, timeout: float | None = 30.0, extra_headers: dict[str, str] | None = None)
 ```
+<!-- /generated:public-api -->
 
 `ConnectionResult` is the outcome of a command or transfer over a
 connection: `ok`, `stdout`, `stderr`, `exit_code`, `duration_ms` and
@@ -101,13 +113,13 @@ class WebSocketConnection                               (url, *, timeout=30.0,
 
 * The HTTP client here is deliberately small and standard-library only.
   The richer HTTP *protocol* adapter lives in
-  [protocols.md](protocols.md); this one is the transport the
+  [protocols.md](../protocols/README.md); this one is the transport the
   `connectivity.http.request` operation uses.
 * `verify_tls` defaults to `True` and is also settable through
   `NETFORGE_VERIFY_TLS`.
 * The SSH connection is not re-exported from the package's `__all__`,
   because importing it eagerly would need `asyncssh`. It is available as
   `netforge.connectivity.ssh` and is used by
-  [configuration.md](configuration.md).
-* See also: [the architecture](ARCHITECTURE.md), [protocols.md](protocols.md),
-  [discovery.md](discovery.md).
+  [configuration.md](../configuration/README.md).
+* See also: [the architecture](../ARCHITECTURE.md), [protocols.md](../protocols/README.md),
+  [discovery.md](../discovery/README.md).

@@ -10,9 +10,11 @@ the safe risk level.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `analysis.flow` | Safe | Analyse a capture file and report the conversations it contains. |
+| [`analysis.flow`](flow.md) | Safe | Analyse a capture file and report the conversations it contains. |
+<!-- /generated:operations -->
 
 ---
 
@@ -78,21 +80,17 @@ for flow in result.flows:
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class Flow                             (source, destination, source_port, destination_port,
-                                        protocol, packets=0, bytes=0, first_seen=0.0,
-                                        last_seen=0.0, flags=set())
-class FlowAnalysisOperation
-class FlowAnalysisRequest              (*, path, top=50)
-class FlowAnalysisResponse             (*, operation='', risk_level='', duration_ms=0.0,
-                                        warnings=[], path, flows=[], statistics={})
-class FlowAnalyzer                     (*, top=50)
-class Packet                           (timestamp, length, protocol='', source='',
-                                        destination='', source_port=None,
-                                        destination_port=None, info='')
-
-read_pcap(path) -> list[Packet]
+class Flow(source: str, destination: str, source_port: int | None, destination_port: int | None, protocol: str, packets: int = 0, bytes: int = 0, first_seen: float = 0.0, last_seen: float = 0.0, flags: set[str] = <factory>)
+class FlowAnalysisOperation()
+class FlowAnalysisRequest(*, path: str, top: int = 50)
+class FlowAnalysisResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], path: str, flows: list[dict[str, object]] = [], statistics: dict[str, object] = {})
+class FlowAnalyzer(*, top: int = 50)
+class Packet(timestamp: float, length: int, protocol: str = '', source: str = '', destination: str = '', source_port: int | None = None, destination_port: int | None = None, info: str = '')
+def read_pcap(path: str | Path) -> list[Packet]
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -103,4 +101,4 @@ read_pcap(path) -> list[Packet]
 * The reader is deliberately free of `scapy` and of every other capture
   library: the format is documented, and parsing it is a hundred lines of
   `struct`.
-* See also: [the architecture](ARCHITECTURE.md), [capture.md](capture.md).
+* See also: [the architecture](../ARCHITECTURE.md), [capture.md](../capture/README.md).

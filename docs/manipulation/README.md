@@ -7,9 +7,11 @@ forwards what it receives.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `manipulation.tcp.proxy` | Manipulation | Run a TCP proxy that forwards traffic to an upstream host and port. |
+| [`manipulation.tcp.proxy`](tcp.proxy.md) | Manipulation | Run a TCP proxy that forwards traffic to an upstream host and port. |
+<!-- /generated:operations -->
 
 The proxy does not alter what it forwards — it is transparent. What makes
 it a *manipulation* is that traffic is redirected through it, and that is
@@ -78,21 +80,16 @@ print(result.statistics)
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class ProxyOperation
-class ProxyRequest                      (*, listen_host='127.0.0.1', listen_port=0,
-                                        upstream_host, upstream_port, duration=10.0)
-class ProxyResponse                     (*, operation='', risk_level='', duration_ms=0.0,
-                                        warnings=[], listen_host, listen_port, upstream,
-                                        statistics={})
-class ProxyStats                        (connections=0, bytes_client_to_upstream=0,
-                                        bytes_upstream_to_client=0, errors=[])
-class TcpProxy                          (listen_host, listen_port, upstream_host,
-                                        upstream_port, *, timeout=30.0)
-
-run_tcp_proxy(listen_host, listen_port, upstream_host, upstream_port, *,
-              duration=None, timeout=30.0) -> ProxyStats
+class ProxyOperation()
+class ProxyRequest(*, listen_host: str = '127.0.0.1', listen_port: int = 0, upstream_host: str, upstream_port: int, duration: float | None = 10.0)
+class ProxyResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], listen_host: str, listen_port: int, upstream: str, statistics: dict[str, object] = {})
+class ProxyStats(connections: int = 0, bytes_client_to_upstream: int = 0, bytes_upstream_to_client: int = 0, errors: list[str] = <factory>)
+class TcpProxy(listen_host: str, listen_port: int, upstream_host: str, upstream_port: int, *, timeout: float | None = 30.0)
+def run_tcp_proxy(listen_host: str, listen_port: int, upstream_host: str, upstream_port: int, *, duration: float | None = None, timeout: float | None = 30.0) -> ProxyStats
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -103,4 +100,4 @@ run_tcp_proxy(listen_host, listen_port, upstream_host, upstream_port, *,
   anyone wants.
 * It forwards bytes; it does not parse them. Anything that understands the
   traffic — TLS, for instance — stays end to end.
-* See also: [the architecture](ARCHITECTURE.md), [emulation.md](emulation.md).
+* See also: [the architecture](../ARCHITECTURE.md), [emulation.md](../emulation/README.md).

@@ -94,10 +94,10 @@ class OpcUaRequest(RequestModel):
 class OpcUaResponse(ResponseModel):
     """Response of :class:`OpcUaOperation`."""
 
-    url: str
-    endpoint: dict[str, object] = Field(default_factory=dict)
-    connected: bool = False
-    nodes: list[str] = Field(default_factory=list)
+    url: str = Field(description="The endpoint that was described.")
+    endpoint: dict[str, object] = Field(default_factory=dict, description="The endpoint as the server reported it.")
+    connected: bool = Field(default=False, description="Whether a session was opened.")
+    nodes: list[str] = Field(default_factory=list, description="The nodes of the endpoint.")
 
 
 class OpcUaOperation(Operation[OpcUaRequest, OpcUaResponse]):

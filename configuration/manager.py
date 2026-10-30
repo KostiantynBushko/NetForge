@@ -164,10 +164,10 @@ class ConfigurationValidateRequest(RequestModel):
 class ConfigurationValidateResponse(ResponseModel):
     """Response of :class:`ConfigurationValidateOperation`."""
 
-    issues: list[dict[str, object]] = Field(default_factory=list)
-    error_count: int = 0
-    warning_count: int = 0
-    valid: bool = True
+    issues: list[dict[str, object]] = Field(default_factory=list, description="The problems that were found.")
+    error_count: int = Field(default=0, description="How many of the problems are errors.")
+    warning_count: int = Field(default=0, description="How many of the problems are warnings.")
+    valid: bool = Field(default=True, description="Whether the configuration is valid.")
 
 
 class ConfigurationValidateOperation(Operation[ConfigurationValidateRequest, ConfigurationValidateResponse]):
@@ -216,9 +216,9 @@ class ConfigurationDiffRequest(RequestModel):
 class ConfigurationDiffResponse(ResponseModel):
     """Response of :class:`ConfigurationDiffOperation`."""
 
-    diff: list[str] = Field(default_factory=list)
-    identical: bool = True
-    changed_lines: int = 0
+    diff: list[str] = Field(default_factory=list, description="The difference between the two configurations.")
+    identical: bool = Field(default=True, description="Whether the two configurations are the same.")
+    changed_lines: int = Field(default=0, description="How many lines differ.")
 
 
 class ConfigurationDiffOperation(Operation[ConfigurationDiffRequest, ConfigurationDiffResponse]):
@@ -268,11 +268,11 @@ class ConfigurationBackupRequest(RequestModel):
 class ConfigurationBackupResponse(ResponseModel):
     """Response of :class:`ConfigurationBackupOperation`."""
 
-    host: str
-    path: str
-    content: str = ""
-    exit_code: int = 0
-    bytes: int = 0
+    host: str = Field(description="The device the configuration was read from.")
+    path: str = Field(description="The path the configuration was written to.")
+    content: str = Field(default="", description="The configuration that was read.")
+    exit_code: int = Field(default=0, description="The exit code of the command that read it.")
+    bytes: int = Field(default=0, description="How many bytes the configuration holds.")
 
 
 class ConfigurationBackupOperation(Operation[ConfigurationBackupRequest, ConfigurationBackupResponse]):
@@ -348,11 +348,11 @@ class ConfigurationRestoreRequest(RequestModel):
 class ConfigurationRestoreResponse(ResponseModel):
     """Response of :class:`ConfigurationRestoreOperation`."""
 
-    host: str
-    path: str
-    written: bool = False
-    backup_path: str | None = None
-    exit_code: int = 0
+    host: str = Field(description="The device the configuration was written to.")
+    path: str = Field(description="The path of the configuration that was written.")
+    written: bool = Field(default=False, description="Whether the configuration was written.")
+    backup_path: str | None = Field(default=None, description="The path of the backup that was taken first.")
+    exit_code: int = Field(default=0, description="The exit code of the command that wrote it.")
 
 
 class ConfigurationRestoreOperation(Operation[ConfigurationRestoreRequest, ConfigurationRestoreResponse]):

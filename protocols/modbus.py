@@ -218,12 +218,12 @@ class ModbusTcpRequest(RequestModel):
 class ModbusTcpResponse(ResponseModel):
     """Response of :class:`ModbusTcpOperation`."""
 
-    host: str
-    function: str
-    address: int
-    count: int
-    values: list[int] = Field(default_factory=list)
-    coils: list[bool] = Field(default_factory=list)
+    host: str = Field(description="The server that was read.")
+    function: str = Field(description="The Modbus function code that was used.")
+    address: int = Field(description="The first register or coil that was read.")
+    count: int = Field(description="How many registers or coils were read.")
+    values: list[int] = Field(default_factory=list, description="The values that were read.")
+    coils: list[bool] = Field(default_factory=list, description="The coils that were read.")
 
 
 class ModbusTcpOperation(Operation[ModbusTcpRequest, ModbusTcpResponse]):

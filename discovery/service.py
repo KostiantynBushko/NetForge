@@ -54,10 +54,10 @@ class ServiceDiscoveryRequest(RequestModel):
 class ServiceDiscoveryResponse(ResponseModel):
     """Response of :class:`ServiceDiscoveryOperation`."""
 
-    host: str
-    open_ports: list[dict[str, object]] = Field(default_factory=list)
-    closed_ports: list[int] = Field(default_factory=list)
-    scanned: int = 0
+    host: str = Field(description="The host that was probed.")
+    open_ports: list[dict[str, object]] = Field(default_factory=list, description="The ports that were open, and the services on them.")
+    closed_ports: list[int] = Field(default_factory=list, description="The ports that were closed.")
+    scanned: int = Field(default=0, description="How many ports were probed.")
 
 
 class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscoveryResponse]):

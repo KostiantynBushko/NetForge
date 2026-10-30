@@ -134,12 +134,12 @@ class NetEmRequest(RequestModel):
 class NetEmResponse(ResponseModel):
     """Response of :class:`NetEmOperation`."""
 
-    interface: str
-    action: str
-    command: list[str] = Field(default_factory=list)
-    applied: bool = False
-    qdisc: list[dict[str, str]] = Field(default_factory=list)
-    profile: dict[str, object] = Field(default_factory=dict)
+    interface: str = Field(description="The interface the conditions were applied to.")
+    action: str = Field(description="What was done: applied, reset or shown.")
+    command: list[str] = Field(default_factory=list, description="The command that was run.")
+    applied: bool = Field(default=False, description="Whether the conditions were applied.")
+    qdisc: list[dict[str, str]] = Field(default_factory=list, description="The queueing discipline that is in place.")
+    profile: dict[str, object] = Field(default_factory=dict, description="The profile that was applied.")
 
 
 class NetEmOperation(Operation[NetEmRequest, NetEmResponse]):

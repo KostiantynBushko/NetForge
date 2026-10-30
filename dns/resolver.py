@@ -224,11 +224,11 @@ class DnsLookupRequest(RequestModel):
 class DnsLookupResponse(ResponseModel):
     """Response of :class:`DnsLookupOperation`."""
 
-    name: str
-    record_type: str
-    records: list[dict[str, object]] = Field(default_factory=list)
-    addresses: list[str] = Field(default_factory=list)
-    count: int = 0
+    name: str = Field(description="The name that was resolved.")
+    record_type: str = Field(description="The kind of record that was asked for.")
+    records: list[dict[str, object]] = Field(default_factory=list, description="The records that came back.")
+    addresses: list[str] = Field(default_factory=list, description="The addresses the name resolves to.")
+    count: int = Field(default=0, description="How many records came back.")
 
 
 class DnsLookupOperation(Operation[DnsLookupRequest, DnsLookupResponse]):

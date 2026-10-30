@@ -317,9 +317,9 @@ class FlowAnalysisRequest(RequestModel):
 class FlowAnalysisResponse(ResponseModel):
     """Response of :class:`FlowAnalysisOperation`."""
 
-    path: str
-    flows: list[dict[str, object]] = Field(default_factory=list)
-    statistics: dict[str, object] = Field(default_factory=dict)
+    path: str = Field(description="The path of the capture file that was read.")
+    flows: list[dict[str, object]] = Field(default_factory=list, description="The conversations of the capture, as a list of dictionaries.")
+    statistics: dict[str, object] = Field(default_factory=dict, description="The statistics of the capture: the totals and the sizes.")
 
 
 class FlowAnalysisOperation(Operation[FlowAnalysisRequest, FlowAnalysisResponse]):

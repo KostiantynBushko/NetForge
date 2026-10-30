@@ -77,11 +77,11 @@ class PingSweepRequest(RequestModel):
 class PingSweepResponse(ResponseModel):
     """Response of :class:`PingSweepOperation`."""
 
-    network: str
-    scanned: int = 0
-    alive: list[str] = Field(default_factory=list)
-    unreachable: list[str] = Field(default_factory=list)
-    details: list[dict[str, object]] = Field(default_factory=list)
+    network: str = Field(description="The network that was swept.")
+    scanned: int = Field(default=0, description="How many addresses were swept.")
+    alive: list[str] = Field(default_factory=list, description="The addresses that answered.")
+    unreachable: list[str] = Field(default_factory=list, description="How many addresses did not answer.")
+    details: list[dict[str, object]] = Field(default_factory=list, description="The details of every address that was swept.")
 
 
 class PingSweepOperation(Operation[PingSweepRequest, PingSweepResponse]):

@@ -103,12 +103,12 @@ class PingRequest(RequestModel):
 class PingResponse(ResponseModel):
     """Response of :class:`PingOperation`."""
 
-    host: str
-    reachable: bool
-    loss_percent: float = 100.0
-    min_ms: float | None = None
-    avg_ms: float | None = None
-    max_ms: float | None = None
+    host: str = Field(description="The host that was pinged.")
+    reachable: bool = Field(description="Whether the host answered.")
+    loss_percent: float = Field(default=100.0, description="How many of the probes were lost, in percent.")
+    min_ms: float | None = Field(default=None, description="The shortest round trip, in milliseconds.")
+    avg_ms: float | None = Field(default=None, description="The mean round trip, in milliseconds.")
+    max_ms: float | None = Field(default=None, description="The longest round trip, in milliseconds.")
 
 
 class PingOperation(Operation[PingRequest, PingResponse]):

@@ -128,13 +128,13 @@ class PortScanRequest(RequestModel):
 class PortScanResponse(ResponseModel):
     """Response of :class:`PortScannerOperation`."""
 
-    host: str
-    results: list[dict[str, object]] = Field(default_factory=list)
-    open_ports: list[int] = Field(default_factory=list)
-    closed_ports: list[int] = Field(default_factory=list)
-    filtered_ports: list[int] = Field(default_factory=list)
-    scanned: int = 0
-    duration_ms: float = 0.0
+    host: str = Field(description="The host that was scanned.")
+    results: list[dict[str, object]] = Field(default_factory=list, description="The result of every port that was scanned.")
+    open_ports: list[int] = Field(default_factory=list, description="The ports that were open.")
+    closed_ports: list[int] = Field(default_factory=list, description="The ports that were closed.")
+    filtered_ports: list[int] = Field(default_factory=list, description="The ports that were filtered.")
+    scanned: int = Field(default=0, description="How many ports were scanned.")
+    duration_ms: float = Field(default=0.0, description="How long the scan took, in milliseconds.")
 
 
 class PortScannerOperation(Operation[PortScanRequest, PortScanResponse]):

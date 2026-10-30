@@ -93,9 +93,9 @@ class MqttTopicRequest(RequestModel):
 class MqttTopicResponse(ResponseModel):
     """Response of :class:`MqttTopicOperation`."""
 
-    matches: list[dict[str, object]] = Field(default_factory=list)
-    unmatched_topics: list[str] = Field(default_factory=list)
-    invalid_filters: list[str] = Field(default_factory=list)
+    matches: list[dict[str, object]] = Field(default_factory=list, description="The topics that matched a filter.")
+    unmatched_topics: list[str] = Field(default_factory=list, description="The topics that matched no filter.")
+    invalid_filters: list[str] = Field(default_factory=list, description="The filters that are not valid.")
 
 
 class MqttTopicOperation(Operation[MqttTopicRequest, MqttTopicResponse]):

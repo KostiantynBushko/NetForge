@@ -148,9 +148,9 @@ class ProfileRequest(RequestModel):
 class ProfileResponse(ResponseModel):
     """Response of :class:`ProfileOperation`."""
 
-    profile: dict[str, object] = Field(default_factory=dict)
-    presets: list[str] = Field(default_factory=list)
-    problems: list[str] = Field(default_factory=list)
+    profile: dict[str, object] = Field(default_factory=dict, description="The profile that was described.")
+    presets: list[str] = Field(default_factory=list, description="The built-in presets.")
+    problems: list[str] = Field(default_factory=list, description="The problems the profile carries.")
 
 
 class ProfileOperation(Operation[ProfileRequest, ProfileResponse]):

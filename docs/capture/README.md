@@ -9,9 +9,11 @@ can be constructed and checked without a capture running.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `capture.session` | Observability | Capture packets from an interface into a libpcap file. |
+| [`capture.session`](session.md) | Observability | Capture packets from an interface into a libpcap file. |
+<!-- /generated:operations -->
 
 A capture is declared *observability* rather than *safe*: it does not touch
 the network, but it does read the traffic on it, and it is plainly visible
@@ -86,27 +88,21 @@ result = await operation.run(
 )
 ```
 
-And to read it back, see [analysis.md](analysis.md).
+And to read it back, see [analysis.md](../analysis/README.md).
 
 ---
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class BpfFilter                        (host=None, port=None, protocol=None, source=None,
-                                        destination=None, direction=None, extra=None,
-                                        parts=[])
-class CaptureFilterRequest             (*, interface='any', output, duration=10.0,
-                                        protocol=None, host=None, port=None,
-                                        source=None, destination=None, direction=None,
-                                        expression=None, snaplen=65535)
-class CaptureOperation
-class CaptureResponse                  (*, operation='', risk_level='', duration_ms=0.0,
-                                        warnings=[], output, interface, expression='',
-                                        duration_seconds=0.0, bytes_written=0, packets=None)
-class CaptureSession                   (interface, output, *, filter_expression=None,
-                                        snaplen=65535, command='tcpdump', timeout=30.0)
+class BpfFilter(host: str | None = None, port: int | None = None, protocol: str | None = None, source: str | None = None, destination: str | None = None, direction: str | None = None, extra: str | None = None, parts: list[str] = <factory>)
+class CaptureFilterRequest(*, interface: str = 'any', output: str, duration: float = 10.0, protocol: str | None = None, host: str | None = None, port: int | None = None, source: str | None = None, destination: str | None = None, direction: str | None = None, expression: str | None = None, snaplen: int = 65535)
+class CaptureOperation()
+class CaptureResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], output: str, interface: str, expression: str = '', duration_seconds: float = 0.0, bytes_written: int = 0, packets: int | None = None)
+class CaptureSession(interface: str, output: Path, *, filter_expression: str | None = None, snaplen: int = 65535, command: str = 'tcpdump', timeout: float | None = 30.0)
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -118,5 +114,5 @@ class CaptureSession                   (interface, output, *, filter_expression=
   are written; `NETFORGE_CAPTURE_DIRECTORY` overrides it.
 * Nothing here imports `scapy`. The capture is a subprocess and the
   analysis reads the file with the standard library — see
-  [analysis.md](analysis.md).
-* See also: [the architecture](ARCHITECTURE.md), [analysis.md](analysis.md).
+  [analysis.md](../analysis/README.md).
+* See also: [the architecture](../ARCHITECTURE.md), [analysis.md](../analysis/README.md).

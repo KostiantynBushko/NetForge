@@ -98,11 +98,11 @@ class BannerGrabRequest(RequestModel):
 class BannerGrabResponse(ResponseModel):
     """Response of :class:`BannerGrabOperation`."""
 
-    host: str
-    port: int
-    banner: str | None = None
-    raw: str | None = None
-    bytes: int = 0
+    host: str = Field(description="The host the banner came from.")
+    port: int = Field(description="The port the banner came from.")
+    banner: str | None = Field(default=None, description="The banner, as text.")
+    raw: str | None = Field(default=None, description="The banner, as it was received.")
+    bytes: int = Field(default=0, description="How many bytes the banner holds.")
 
 
 class BannerGrabOperation(Operation[BannerGrabRequest, BannerGrabResponse]):

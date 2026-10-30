@@ -178,12 +178,12 @@ class CaptureFilterRequest(RequestModel):
 class CaptureResponse(ResponseModel):
     """Response of :class:`CaptureOperation`."""
 
-    output: str
-    interface: str
-    expression: str = ""
-    duration_seconds: float = 0.0
-    bytes_written: int = 0
-    packets: int | None = None
+    output: str = Field(description="The path of the capture file that was written.")
+    interface: str = Field(description="The interface the packets were captured from.")
+    expression: str = Field(default="", description="The filter the capture was filtered by.")
+    duration_seconds: float = Field(default=0.0, description="How long the capture ran, in seconds.")
+    bytes_written: int = Field(default=0, description="How many bytes were written to the capture file.")
+    packets: int | None = Field(default=None, description="How many packets were captured.")
 
 
 class CaptureOperation(Operation[CaptureFilterRequest, CaptureResponse]):

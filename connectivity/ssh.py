@@ -141,12 +141,12 @@ class SshExecuteRequest(RequestModel):
 class SshExecuteResponse(ResponseModel):
     """Response of :class:`SshExecuteOperation`."""
 
-    host: str
-    command: str
-    exit_code: int
-    stdout: str = ""
-    stderr: str = ""
-    duration_ms: float = 0.0
+    host: str = Field(description="The host the command ran on.")
+    command: str = Field(description="The command that was run.")
+    exit_code: int = Field(description="The exit code of the command.")
+    stdout: str = Field(default="", description="What the command wrote to the standard output.")
+    stderr: str = Field(default="", description="What the command wrote to the standard error.")
+    duration_ms: float = Field(default=0.0, description="How long the command took, in milliseconds.")
 
 
 class SshExecuteOperation(Operation[SshExecuteRequest, SshExecuteResponse]):

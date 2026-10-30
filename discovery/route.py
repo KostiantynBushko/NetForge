@@ -132,9 +132,9 @@ class RouteTableRequest(RequestModel):
 class RouteTableResponse(ResponseModel):
     """Response of :class:`RouteTableOperation`."""
 
-    entries: list[dict[str, object]] = Field(default_factory=list)
-    source: str = ""
-    total: int = 0
+    entries: list[dict[str, object]] = Field(default_factory=list, description="The routes of the table.")
+    source: str = Field(default="", description="Where the table was read from.")
+    total: int = Field(default=0, description="How many routes there are.")
 
 
 class RouteTableOperation(Operation[RouteTableRequest, RouteTableResponse]):

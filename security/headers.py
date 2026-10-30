@@ -150,11 +150,11 @@ class HttpHeaderAnalysisRequest(RequestModel):
 class HttpHeaderAnalysisResponse(ResponseModel):
     """Response of :class:`HttpHeaderAnalysisOperation`."""
 
-    findings: list[dict[str, object]] = Field(default_factory=list)
-    score: int = 0
-    checked: int = 0
-    present: int = 0
-    url: str | None = None
+    findings: list[dict[str, object]] = Field(default_factory=list, description="The problems that were found.")
+    score: int = Field(default=0, description="The score of the headers, from 0 to 100.")
+    checked: int = Field(default=0, description="The headers that were checked.")
+    present: int = Field(default=0, description="The headers that were present.")
+    url: str | None = Field(default=None, description="The URL the headers came from.")
 
 
 class HttpHeaderAnalysisOperation(Operation[HttpHeaderAnalysisRequest, HttpHeaderAnalysisResponse]):

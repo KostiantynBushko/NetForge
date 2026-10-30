@@ -13,13 +13,15 @@ SNMP, Modbus TCP — are implemented here, on the standard library alone.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `protocols.http.request` | Safe | Speak the HTTP protocol against an endpoint and report the reply. |
-| `protocols.snmp.get` | Safe | Read a single OID from an SNMP agent. |
-| `protocols.modbus.read` | Safe | Read holding registers or coils from a Modbus TCP server. |
-| `protocols.mqtt.topic.match` | Safe | Match MQTT topics against wildcard filters. |
-| `protocols.opcua.endpoint` | Safe | Describe an OPC UA endpoint and optionally open a session. |
+| [`protocols.http.request`](http.request.md) | Safe | Speak the HTTP protocol against an endpoint and report the reply. |
+| [`protocols.modbus.read`](modbus.read.md) | Safe | Read holding registers or coils from a Modbus TCP server. |
+| [`protocols.mqtt.topic.match`](mqtt.topic.match.md) | Safe | Match MQTT topics against wildcard filters. |
+| [`protocols.opcua.endpoint`](opcua.endpoint.md) | Safe | Describe an OPC UA endpoint and optionally open a session. |
+| [`protocols.snmp.get`](snmp.get.md) | Safe | Read a single OID from an SNMP agent. |
+<!-- /generated:operations -->
 
 ---
 
@@ -35,7 +37,7 @@ every protocol client. `ProtocolError` is raised when an exchange fails.
 `HttpProtocol(host, port=None, *, timeout=30.0, scheme='http', path='/',
 verify_tls=True, user_agent='netforge/0.1.0')` is an HTTP client expressed
 as a protocol adapter — the same wire behaviour as the transport in
-[connectivity.md](connectivity.md), but with the protocol adapter's shape.
+[connectivity.md](../connectivity/README.md), but with the protocol adapter's shape.
 
 ---
 
@@ -99,23 +101,22 @@ result = await operation.run(host="10.0.0.1", oid="1.3.6.1.2.1.1.1.0")
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class HttpProtocol                    (host, port=None, *, timeout=30.0, scheme='http',
-                                       path='/', verify_tls=True,
-                                       user_agent='netforge/0.1.0')
-class HttpProtocolOperation
-class ModbusTcpClient                 (host, port=502, *, unit_id=1, timeout=10.0)
-class ModbusTcpOperation
-class MqttTopicFilter                 (pattern)
-class MqttTopicOperation
-class OpcUaEndpoint                   (url, scheme, host, port, path, security_profile)
-class OpcUaOperation
-class ProtocolAdapter                 (host, port=None, *, timeout=30.0)
-class ProtocolError(Exception)
-class SnmpClient                      (host, port=161, *, community='public',
-                                       version=1, timeout=10.0)
-class SnmpGetOperation
+class HttpProtocol(host: str, port: int | None = None, *, timeout: float | None = 30.0, scheme: str = 'http', path: str = '/', verify_tls: bool = True, user_agent: str = 'netforge/0.1.0')
+class HttpProtocolOperation()
+class ModbusTcpClient(host: str, port: int = 502, *, unit_id: int = 1, timeout: float | None = 10.0)
+class ModbusTcpOperation()
+class MqttTopicFilter(pattern: str)
+class MqttTopicOperation()
+class OpcUaEndpoint(url: str, scheme: str, host: str, port: int | None, path: str, security_profile: str)
+class OpcUaOperation()
+class ProtocolAdapter(host: str, port: int | None = None, *, timeout: float | None = 30.0)
+class ProtocolError(args, kwargs)
+class SnmpClient(host: str, port: int = 161, *, community: str = 'public', version: int = 1, timeout: float | None = 10.0)
+class SnmpGetOperation()
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -125,5 +126,5 @@ class SnmpGetOperation
   `netforge.protocols` imports cleanly with no extras installed.
 * `community='public'` is the SNMP default and is the least safe value —
   set it explicitly for anything but a lab network.
-* See also: [the architecture](ARCHITECTURE.md#what-is-deliberately-not-implemented),
-  [connectivity.md](connectivity.md).
+* See also: [the architecture](../ARCHITECTURE.md#what-is-deliberately-not-implemented),
+  [connectivity.md](../connectivity/README.md).

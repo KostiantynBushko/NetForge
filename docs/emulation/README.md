@@ -11,10 +11,12 @@ modification level.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `emulation.profile` | Safe | Describe a network profile or list the built-in presets. |
-| `emulation.netem` | **System modification** | Apply, reset or show the network conditions of an interface. |
+| [`emulation.netem`](netem.md) | System Modification | Apply, reset or show the network conditions of an interface. |
+| [`emulation.profile`](profile.md) | Safe | Describe a network profile or list the built-in presets. |
+<!-- /generated:operations -->
 
 Describing a profile reads nothing and changes nothing. Applying one
 rewrites the kernel's queueing discipline on an interface, which is why
@@ -87,19 +89,18 @@ result = await operation.run(interface="eth0", profile="3g", action="apply")
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class NetEmController                   (interface)
-class NetEmOperation
-class NetworkProfile                    (name, latency_ms=0.0, jitter_ms=0.0,
-                                        loss_percent=0.0, bandwidth_mbps=None,
-                                        description='')
-class ProfileOperation
-
-PROFILE_PRESETS: dict
-build_netem_command(interface, profile, *, root=True) -> list[str]
-grade_profile(profile) -> list[str]
-parse_qdisc(text) -> list[dict[str, str]]
+class NetEmController(interface: str)
+class NetEmOperation()
+class NetworkProfile(name: str, latency_ms: float = 0.0, jitter_ms: float = 0.0, loss_percent: float = 0.0, bandwidth_mbps: float | None = None, description: str = '')
+PROFILE_PRESETS = {'bad_wifi': NetworkProfile(name='bad_wifi', latency_ms=1...
+class ProfileOperation()
+def build_netem_command(interface: str, profile: NetworkProfile, *, root: bool = True) -> list[str]
+def grade_profile(profile: NetworkProfile) -> list[str]
+def parse_qdisc(text: str) -> list[dict[str, str]]
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -112,5 +113,5 @@ parse_qdisc(text) -> list[dict[str, str]]
 * `grade_profile` catches the combinations that do not make sense — a
   bandwidth limit with no delay, a loss percentage above a hundred — before
   they reach the kernel.
-* See also: [the architecture](ARCHITECTURE.md),
-  [manipulation.md](manipulation.md), [discovery.md](discovery.md).
+* See also: [the architecture](../ARCHITECTURE.md),
+  [manipulation.md](../manipulation/README.md), [discovery.md](../discovery/README.md).

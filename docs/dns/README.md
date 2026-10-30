@@ -10,10 +10,12 @@ safe risk level.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `dns.lookup` | Safe | Resolve a DNS name and return its records. |
-| `dns.diagnostics` | Safe | Analyse the SPF and DMARC policies of a domain. |
+| [`dns.diagnostics`](diagnostics.md) | Safe | Analyse the SPF and DMARC policies of a domain. |
+| [`dns.lookup`](lookup.md) | Safe | Resolve a DNS name and return its records. |
+<!-- /generated:operations -->
 
 ---
 
@@ -36,10 +38,22 @@ and `dnspython` is the optional extra that provides one.
 The `dns` extra provides `dnspython`. When it is missing, the capability
 is still *listed*, and running it reports exactly what to install:
 
+<!-- generated:public-api -->
 ```text
-the optional dependency 'dnspython' is required for DNS record resolution.
-Install it with: pip install 'netforge[dns]'
+class DmarcPolicy(version: str = '', tags: dict[str, str] = <factory>, raw: str = '')
+class DnsDiagnosticsOperation()
+class DnsLookupOperation()
+class DnsRecord(name: str, type: str, value: str, ttl: int | None = None, priority: int | None = None, metadata: dict[str, str] = <factory>)
+class DnsResolver(*, nameservers: list[str] | None = None, timeout: float = 5.0)
+class SpfPolicy(version: str = '', mechanisms: list[str] = <factory>, modifiers: dict[str, str] = <factory>, raw: str = '')
+class SpfResult(result: str = 'none', explanation: str = '', matched_mechanism: str | None = None)
+def evaluate_spf(record: str, sender_ip: str) -> SpfResult
+def is_aligned(subdomain: str, from_domain: str, mode: str) -> bool
+def organisational_domain(domain: str) -> str
+def parse_dmarc(record: str) -> DmarcPolicy
+def parse_spf(record: str) -> SpfPolicy
 ```
+<!-- /generated:public-api -->
 
 dnspython is located through its installed distribution and bound under
 the `dns` name explicitly, so NetForge's own `dns` capability package can
@@ -129,5 +143,5 @@ parse_spf(record) -> SpfPolicy
   — which is exactly what the test suite does.
 * A missing `dnspython` degrades one capability; it never breaks the
   import of the package or the framework.
-* See also: [the architecture](ARCHITECTURE.md),
-  [configuration.md](configuration.md).
+* See also: [the architecture](../ARCHITECTURE.md),
+  [configuration.md](../configuration/README.md).

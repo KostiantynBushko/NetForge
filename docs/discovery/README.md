@@ -12,14 +12,16 @@ tested against a captured sample without a Linux kernel, and without root.
 
 ## Operations
 
+<!-- generated:operations -->
 | Operation | Risk | What it does |
 |---|---|---|
-| `discovery.ping` | Safe | Send ICMP echo requests to a host and report the round-trip times. |
-| `discovery.ping.sweep` | Observability | Ping every address of a network and report the hosts that answer. |
-| `discovery.traceroute` | Safe | Trace the network path to a host and report every hop. |
-| `discovery.arp.table` | Safe | Read the local ARP neighbour table. |
-| `discovery.route.table` | Safe | Read the local routing table. |
-| `discovery.service.enumerate` | Observability | Probe the ports of a host and name the services that are listening. |
+| [`discovery.arp.table`](arp.table.md) | Safe | Read the local ARP neighbour table. |
+| [`discovery.ping`](ping.md) | Safe | Send ICMP echo requests to a host and report the round-trip times. |
+| [`discovery.ping.sweep`](ping.sweep.md) | Observability | Ping every address of a network and report the hosts that answer. |
+| [`discovery.route.table`](route.table.md) | Safe | Read the local routing table. |
+| [`discovery.service.enumerate`](service.enumerate.md) | Observability | Probe the ports of a host and name the services that are listening. |
+| [`discovery.traceroute`](traceroute.md) | Safe | Trace the network path to a host and report every hop. |
+<!-- /generated:operations -->
 
 A single ping is safe — one host, one request, and the answer is the
 point. A sweep is one level higher: a whole subnet notices.
@@ -88,22 +90,22 @@ result = await operation.run(host="10.0.0.1", count=4)
 
 ## The public API
 
+<!-- generated:public-api -->
 ```text
-class ArpEntry                     (ip_address, hw_type, flags, mac_address, device)
-class ArpTableOperation
-class PingOperation
-class PingResult                   (reachable, loss_percent=100.0, min_ms=None,
-                                    avg_ms=None, max_ms=None, raw='')
-class PingSweepOperation
-class RouteEntry                   (destination, gateway, netmask, device,
-                                    metric=0, flags=0, protocol='')
-class RouteTableOperation
-class ServiceDiscoveryOperation
-class TracerouteOperation
-
-parse_arp_table(text) -> list[ArpEntry]
-parse_route_table(text) -> list[RouteEntry]
+class ArpEntry(ip_address: str, hw_type: str, flags: str, mac_address: str, device: str)
+class ArpTableOperation()
+def parse_route_table(text: str) -> list[RouteEntry]
+class PingOperation()
+class PingResult(reachable: bool, loss_percent: float = 100.0, min_ms: float | None = None, avg_ms: float | None = None, max_ms: float | None = None, raw: str = '')
+class PingSweepOperation()
+class RouteEntry(destination: str, gateway: str, netmask: str, device: str, metric: int = 0, flags: int = 0, protocol: str = '')
+class RouteTableOperation()
+class ServiceDiscoveryOperation()
+class TracerouteOperation()
+def parse_arp_table(text: str) -> list[ArpEntry]
+def parse_route_table(text: str) -> list[RouteEntry]
 ```
+<!-- /generated:public-api -->
 
 ---
 
@@ -116,6 +118,6 @@ parse_route_table(text) -> list[RouteEntry]
   machine NetForge runs on — not a remote host.
 * `discovery.service.enumerate` probes ports and names what it finds; it
   is the discovery counterpart of
-  [the port scanner](security.md#the-port-scanner).
-* See also: [the architecture](ARCHITECTURE.md),
-  [security.md](security.md), [connectivity.md](connectivity.md).
+  [the port scanner](../security/README.md#the-port-scanner).
+* See also: [the architecture](../ARCHITECTURE.md),
+  [security.md](../security/README.md), [connectivity.md](../connectivity/README.md).
