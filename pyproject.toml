@@ -67,9 +67,29 @@ netforge = "netforge.adapters.cli:main"
 # instead, so they need no entry here.
 [project.entry-points."netforge.plugins"]
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["netforge*"]
+# The project root *is* the ``netforge`` package: the capability packages
+# live at the top level of the repository, and setuptools maps them back into
+# the ``netforge`` namespace when it builds the distribution.
+[tool.setuptools]
+packages = [
+    "netforge",
+    "netforge.adapters",
+    "netforge.analysis",
+    "netforge.capture",
+    "netforge.configuration",
+    "netforge.connectivity",
+    "netforge.core",
+    "netforge.discovery",
+    "netforge.dns",
+    "netforge.emulation",
+    "netforge.manipulation",
+    "netforge.models",
+    "netforge.plugins",
+    "netforge.protocols",
+    "netforge.registry",
+    "netforge.security",
+]
+package-dir = { netforge = "." }
 
 [tool.setuptools.package-data]
 netforge = ["py.typed"]

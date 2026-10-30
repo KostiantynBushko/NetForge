@@ -141,7 +141,7 @@ allowed to run it".
 The framework is a set of packages, one per capability:
 
 ```text
-netforge/
+.
 ├── core/          the framework: operation contract, context, config, runner
 ├── models/        the Pydantic contracts: requests, responses, risk, categories
 ├── registry/      the catalogue of everything NetForge can do
@@ -158,6 +158,11 @@ netforge/
 ├── adapters/      CLI, REST, MCP, LlamaIndex
 └── plugins/       the plugin system
 ```
+
+The capability packages sit at the top of the repository: the project root
+*is* the `netforge` package. `pyproject.toml` maps it back under that name
+when the distribution is built, so `import netforge` resolves exactly as it
+would from any installed copy.
 
 The rule that keeps it coherent: **the registry is the only catalogue**.
 Every adapter reads from it, so a capability implemented once is available

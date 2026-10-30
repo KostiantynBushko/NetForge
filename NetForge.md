@@ -29,7 +29,7 @@ AI integrations such as LlamaIndex FunctionTool and MCP are implemented as optio
 # Architecture
 
 ```text
-netforge/
+.
 
 ├── core/
 │

@@ -2,15 +2,49 @@
 
 from __future__ import annotations
 
+import importlib.util
+import sys
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Mapping, Sequence
 
 import pytest
 
-from netforge.core.bootstrap import load_builtin_operations
-from netforge.core.context import ExecutionContext
-from netforge.core.runner import CommandResult
-from netforge.registry.registry import OperationRegistry
+_ROOT = Path(__file__).resolve().parent.parent
+
+
+def _bind_root_package() -> None:
+    """Bind the import name ``netforge`` to the project root.
+
+    The project root *is* the package: the capability packages live at the
+    top of the repository and ``pyproject.toml`` maps them back under the
+    ``netforge`` name when the distribution is built.  The checkout on disk
+    is called ``NetForge`` while the importable name is ``netforge``, so
+    bind that name explicitly here.
+
+    This lets the suite run straight from a checkout, with no install
+    step, and it is a no-op once the distribution is installed.
+    """
+    if "netforge" in sys.modules:
+        return
+    spec = importlib.util.spec_from_file_location(
+        "netforge",
+        _ROOT / "__init__.py",
+        submodule_search_locations=[str(_ROOT)],
+    )
+    if spec is None or spec.loader is None:  # pragma: no cover - defensive
+        return
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["netforge"] = module
+    spec.loader.exec_module(module)
+
+
+_bind_root_package()
+
+from netforge.core.bootstrap import load_builtin_operations  # noqa: E402
+from netforge.core.context import ExecutionContext  # noqa: E402
+from netforge.core.runner import CommandResult  # noqa: E402
+from netforge.registry.registry import OperationRegistry  # noqa: E402
 
 
 @dataclass
