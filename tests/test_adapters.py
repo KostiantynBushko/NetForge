@@ -119,6 +119,15 @@ class TestTheParametersOnTheCommandLine:
         assert main(["list", "--nope"]) == 2
         assert "unrecognized arguments" in capsys.readouterr().err
 
+    def test_the_operation_may_be_named_after_the_flags(self, capsys):
+        # The risk ceiling refuses the operation before it runs, so the
+        # suite stays offline -- and the refusal names the operation,
+        # which is what the reordering is for.
+        arguments = ["--max-risk", "1", "run", "--host", "10.0.0.1"]
+        arguments.append("discovery.service.enumerate")
+        assert main(arguments) == 1
+        assert "discovery.service.enumerate" in capsys.readouterr().err
+
 
 class TestAdapterContract:
     def test_the_cli_adapter_is_always_available(self, registry):

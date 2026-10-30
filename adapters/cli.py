@@ -343,6 +343,34 @@ def _the_operation_of_the_help(argv: Sequence[str] | None) -> str | None:
     return rest[0]
 
 
+def _the_operation_first(tokens: list[str], names: set[str]) -> list[str]:
+    """Put the operation before the flags, so that the order does not matter.
+
+    ``netforge run --host 10.0.0.1 discovery.ping`` and
+    ``netforge run discovery.ping --host 10.0.0.1`` are the same command,
+    and a person may type either.  The operation is the one token that
+    names an operation of the catalogue.
+    """
+    if not tokens:
+        return tokens
+    if tokens[0] in names:
+        return tokens
+    for index, token in enumerate(tokens):
+        if token in names:
+            return [token] + tokens[:index] + tokens[index + 1:]
+    return tokens
+
+
+def _the_run_arguments(argv: Sequence[str] | None, names: set[str]) -> list[str] | None:
+    """The arguments of the run command, with the operation first."""
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    if "run" not in tokens:
+        return None
+    index = tokens.index("run")
+    head, rest = tokens[:index], tokens[index + 1:]
+    return head + ["run"] + _the_operation_first(rest, names)
+
+
 def _print_the_parameters(parser: argparse.ArgumentParser, operation: str) -> int:
     """Print the parameters of an operation, then the help of the command."""
     registry = load_builtin_operations()
@@ -381,6 +409,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     operation = _the_operation_of_the_help(argv)
     if operation is not None:
         return _print_the_parameters(parser, operation)
+
+    # The operation may be named before the flags or after them; the
+    # flags of the operation are found by name, so the order does not
+    # matter to the person typing the command.
+    tokens = list(sys.argv[1:] if argv is None else argv)
+    registry = None
+    if "run" in tokens:
+        registry = load_builtin_operations()
+        arguments = _the_run_arguments(tokens, set(registry.names()))
+        if arguments is not None:
+            argv = arguments
     # The arguments that argparse does not know are the parameters of the
     # operation, and only the run command takes them.
     try:
@@ -401,7 +440,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return EXIT_USAGE
 
-    registry = load_builtin_operations()
+    if registry is None:
+        registry = load_builtin_operations()
 
     max_risk = RiskLevel.SYSTEM_MODIFICATION
     if args.max_risk:
