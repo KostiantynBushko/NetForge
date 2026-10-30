@@ -146,6 +146,40 @@ allowed to run it".
 
 ---
 
+## The levels of a scan
+
+A scan is loud. Every probe is a packet the target, or the equipment in
+front of it, can see, and a scan that comes in a hurry is easy to tell
+from the traffic around it. The scans of NetForge take a **level**, and
+the level is the trade-off between how fast the scan runs and how much
+of a trace it leaves behind.
+
+| Level | What it does |
+|---|---|
+| `paranoid` | one probe at a time, a second between them, and a long patience |
+| `stealth` | one probe at a time, half a second between them, and no handshake when nmap and root allow it |
+| `polite` | a few probes at a time, and a tenth of a second between them |
+| `normal` | the default: the speed the operation had before the levels existed |
+| `aggressive` | as many probes at once as the target will take, and no waiting |
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 --aggressiveness polite
+```
+
+The scans can also be run by **nmap**, when it is installed. nmap knows
+more about the services behind the open ports — it names the product and
+the version, not only the service — and it can be asked to be quieter:
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 --engine nmap
+```
+
+Without nmap installed, the native scanner does the work and the
+response says so. The levels are described in
+[the discovery package](discovery/docs/README.md#the-engines-and-the-levels).
+
+---
+
 ## The architecture
 
 The framework is a set of packages, one per capability:

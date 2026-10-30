@@ -19,9 +19,12 @@ from pydantic import Field
 from netforge.core.context import ExecutionContext
 from netforge.core.logging import get_logger
 from netforge.core.operation import Operation
+from netforge.core.runner import which
+from netforge.discovery import nmap
 from netforge.models.base import RequestModel, ResponseModel
 from netforge.models.capability import CapabilityCategory
 from netforge.models.risk import RiskLevel
+from netforge.models.scanning import Aggressiveness, ScanEngine, the_profile
 
 __all__ = ["ServiceDiscoveryOperation", "lookup_service_name", "COMMON_PORTS"]
 
@@ -47,8 +50,25 @@ class ServiceDiscoveryRequest(RequestModel):
         default_factory=lambda: list(COMMON_PORTS),
         description="The ports to probe. An empty list uses the common set.",
     )
-    timeout: float | None = Field(default=2.0, gt=0.0, description="Connect timeout per port.")
-    concurrency: int = Field(default=32, ge=1, le=256, description="How many probes to run at once.")
+    timeout: float | None = Field(
+        default=None,
+        gt=0.0,
+        description="Connect timeout per port. The level decides when it is not given.",
+    )
+    concurrency: int | None = Field(
+        default=None,
+        ge=1,
+        le=256,
+        description="How many probes to run at once. The level decides when it is not given.",
+    )
+    engine: ScanEngine = Field(
+        default=ScanEngine.NATIVE,
+        description="The scanner that runs the scan: the native one, or nmap.",
+    )
+    aggressiveness: Aggressiveness = Field(
+        default=Aggressiveness.NORMAL,
+        description="How hard the scan pushes, and how visible it is on the target.",
+    )
 
 
 class ServiceDiscoveryResponse(ResponseModel):
@@ -58,6 +78,10 @@ class ServiceDiscoveryResponse(ResponseModel):
     open_ports: list[dict[str, object]] = Field(default_factory=list, description="The ports that were open, and the services on them.")
     closed_ports: list[int] = Field(default_factory=list, description="The ports that were closed.")
     scanned: int = Field(default=0, description="How many ports were probed.")
+    engine: str = Field(default="native", description="The scanner that ran the scan.")
+    aggressiveness: str = Field(
+        default="normal", description="The level the scan was run at."
+    )
 
 
 class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscoveryResponse]):
@@ -82,17 +106,31 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
         self, request: ServiceDiscoveryRequest, context: ExecutionContext
     ) -> ServiceDiscoveryResponse:
         """Probe the ports."""
+        if request.engine is ScanEngine.NMAP:
+            return await self._with_nmap(request, context)
+        return await self._with_the_native_scanner(request, context)
+
+    async def _with_the_native_scanner(
+        self, request: ServiceDiscoveryRequest, context: ExecutionContext
+    ) -> ServiceDiscoveryResponse:
+        """Probe the ports with the scanner of NetForge itself."""
         ports = request.ports or list(COMMON_PORTS)
-        semaphore = asyncio.Semaphore(request.concurrency)
+        profile = the_profile(request.aggressiveness)
+        timeout = profile.the_timeout(request.timeout or 2.0)
+        concurrency = profile.the_concurrency(request.concurrency or 32)
+        semaphore = asyncio.Semaphore(concurrency)
 
         async def probe(port: int) -> tuple[int, bool, float | None]:
             started = time.perf_counter()
             async with semaphore:
+                if profile.delay:
+                    # The level asked for a pause between the probes.
+                    await asyncio.sleep(profile.delay)
                 writer: asyncio.StreamWriter | None = None
                 try:
                     _reader, writer = await asyncio.wait_for(
                         asyncio.open_connection(request.host, port),
-                        timeout=request.timeout or 2.0,
+                        timeout=timeout,
                     )
                 except (OSError, asyncio.TimeoutError):
                     return port, False, None
@@ -129,4 +167,81 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
             open_ports=open_ports,
             closed_ports=closed_ports,
             scanned=len(ports),
+            engine=request.engine.value,
+            aggressiveness=request.aggressiveness.value,
+        )
+
+    async def _with_nmap(
+        self, request: ServiceDiscoveryRequest, context: ExecutionContext
+    ) -> ServiceDiscoveryResponse:
+        """Probe the ports with nmap."""
+        started = time.perf_counter()
+        ports = request.ports or list(COMMON_PORTS)
+        profile = the_profile(request.aggressiveness)
+        timeout = profile.the_timeout(request.timeout or 2.0)
+        root = nmap.is_root()
+        warnings = list(nmap.the_warnings(request.aggressiveness, root))
+
+        if which("nmap") is None:
+            # nmap was asked for and is not there: the native scanner
+            # does the work, and the response says so.
+            response = await self._with_the_native_scanner(request, context)
+            response.warnings.append(
+                "nmap is not installed; the native scanner was used instead"
+            )
+            response.engine = request.engine.value
+            response.aggressiveness = request.aggressiveness.value
+            return response
+
+        arguments = nmap.the_arguments(
+            host=request.host,
+            ports=",".join(str(port) for port in ports),
+            level=request.aggressiveness,
+            timeout=timeout,
+            root=root,
+        )
+        result = await context.runner().run(arguments, timeout=context.timeout)
+        if not result.ok:
+            detail = (result.stderr or result.stdout).strip()
+            return ServiceDiscoveryResponse(
+                operation=self.name,
+                risk_level=self.risk_level.label,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                host=request.host,
+                open_ports=[],
+                closed_ports=[],
+                scanned=0,
+                engine=request.engine.value,
+                aggressiveness=request.aggressiveness.value,
+                warnings=[f"nmap exited with the status {result.returncode}: {detail}"],
+            )
+
+        try:
+            found = nmap.parse_nmap_xml(result.stdout)
+        except ValueError as exc:
+            return ServiceDiscoveryResponse(
+                operation=self.name,
+                risk_level=self.risk_level.label,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                host=request.host,
+                open_ports=[],
+                closed_ports=[],
+                scanned=0,
+                engine=request.engine.value,
+                aggressiveness=request.aggressiveness.value,
+                warnings=[str(exc)],
+            )
+
+        warnings.extend(found.warnings)
+        return ServiceDiscoveryResponse(
+            operation=self.name,
+            risk_level=self.risk_level.label,
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+            host=request.host,
+            open_ports=found.the_open(),
+            closed_ports=found.closed_ports,
+            scanned=found.scanned,
+            engine=request.engine.value,
+            aggressiveness=request.aggressiveness.value,
+            warnings=warnings,
         )

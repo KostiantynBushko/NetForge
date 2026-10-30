@@ -31,7 +31,7 @@ target, and the risk model is about what the other side notices.
 
 ---
 
-## The port scanner
+## The port scanner, in detail
 
 `PortScannerOperation` scans the TCP ports of a host.
 
@@ -47,6 +47,23 @@ target, and the risk model is about what the other side notices.
 `PortScanResponse` reports `host`, the per-port `results`, and the
 `open_ports`, `closed_ports` and `filtered_ports` lists, plus how many
 ports were `scanned`.
+
+---
+
+## The engines and the levels
+
+The port scanner takes the same two knobs as the service enumeration:
+the **engine** that runs the scan, and the **aggressiveness** of it.
+
+```bash
+netforge run security.portscan --host 10.0.0.1 --engine nmap
+netforge run security.portscan --host 10.0.0.1 --aggressiveness polite
+```
+
+The nmap engine and the levels are described in
+[the discovery package](../../discovery/docs/README.md#the-engines-and-the-levels);
+the levels themselves are in
+[the models](../../models/docs/README.md#the-levels-of-a-scan).
 
 ---
 
@@ -113,8 +130,8 @@ print(result.open_ports)
 ```text
 class BannerGrabOperation()
 class HttpHeaderAnalysisOperation()
-class PortScanRequest(*, host: str, ports: list[int] | str = [22, 80, 443], timeout: float | None = 2.0, concurrency: int = 64)
-class PortScanResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], host: str, results: list[dict[str, object]] = [], open_ports: list[int] = [], closed_ports: list[int] = [], filtered_ports: list[int] = [], scanned: int = 0)
+class PortScanRequest(*, host: str, ports: list[int] | str = [22, 80, 443], timeout: float | None = None, concurrency: int | None = None, engine: ScanEngine = <ScanEngine.NATIVE: 'native'>, aggressiveness: Aggressiveness = <Aggressiveness.NORMAL: 'normal'>)
+class PortScanResponse(*, operation: str = '', risk_level: str = '', duration_ms: float = 0.0, warnings: list[str] = [], host: str, results: list[dict[str, object]] = [], open_ports: list[int] = [], closed_ports: list[int] = [], filtered_ports: list[int] = [], scanned: int = 0, engine: str = 'native', aggressiveness: str = 'normal')
 class PortScannerOperation()
 SECURITY_HEADERS = {'strict-transport-security': 'The connection is not pinn...
 class TlsInspectionOperation()

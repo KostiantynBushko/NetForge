@@ -90,18 +90,43 @@ def the_descriptors() -> list[Any]:
 # The helpers
 # ---------------------------------------------------------------------------
 
-def the_type_of(schema: dict[str, Any]) -> str:
+def the_resolved(schema: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
+    """The schema behind a reference.
+
+    A property that is an enum is written as a reference to a definition
+    -- ``{"$ref": "#/$defs/ScanEngine"}`` -- and the definition is where
+    the values are.
+    """
+    if not isinstance(schema, dict):
+        return {}
+
+    if "allOf" in schema and len(schema["allOf"]) == 1:
+        return the_resolved(schema["allOf"][0], definitions)
+
+    reference = schema.get("$ref")
+    if isinstance(reference, str) and reference.startswith("#/$defs/"):
+        name = reference[len("#/$defs/"):]
+        definition = definitions.get(name)
+        if isinstance(definition, dict):
+            return definition
+    return schema
+
+
+def the_type_of(schema: dict[str, Any], definitions: dict[str, Any] | None = None) -> str:
     """The name of the type of a JSON schema, in the documentation's words.
 
     A schema that allows several types -- ``anyOf`` -- is written as the
     union of them, with ``null`` left out, because ``null`` means "not
-    given".
+    given".  An enum is written as its values.
     """
     if not isinstance(schema, dict):
         return "any"
 
+    definitions = definitions or {}
+    schema = the_resolved(schema, definitions)
+
     if "anyOf" in schema:
-        parts = [the_type_of(part) for part in schema["anyOf"]]
+        parts = [the_type_of(part, definitions) for part in schema["anyOf"]]
         parts = [part for part in parts if part != "null"]
         if not parts:
             return "null"
@@ -117,7 +142,7 @@ def the_type_of(schema: dict[str, Any]) -> str:
         return "any"
     if kind == "array":
         items = schema.get("items") or {}
-        return f"list of {the_type_of(items)}"
+        return f"list of {the_type_of(items, definitions)}"
     return _TYPE_NAMES.get(kind, kind)
 
 
@@ -173,13 +198,14 @@ def the_parameters_of(schema: dict[str, Any]) -> list[dict[str, Any]]:
     if not isinstance(schema, dict):
         return []
     properties = schema.get("properties") or {}
+    definitions = schema.get("$defs") or {}
     required = set(schema.get("required") or [])
     parameters = []
     for name, definition in properties.items():
         parameters.append(
             {
                 "name": name,
-                "type": the_type_of(definition),
+                "type": the_type_of(definition, definitions),
                 "default": the_default_of(definition),
                 "required": name in required,
                 "constraints": the_constraints_of(definition),
@@ -465,6 +491,7 @@ def the_response_section(descriptor: Any) -> list[str]:
     """The response section of an operation page."""
     schema = descriptor.response_schema or {}
     properties = schema.get("properties") or {}
+    definitions = schema.get("$defs") or {}
     if not properties:
         return ["It returns the standard response envelope."]
 
@@ -474,7 +501,9 @@ def the_response_section(descriptor: Any) -> list[str]:
     ]
     for name, definition in properties.items():
         description = (definition or {}).get("description", "").replace("|", "\\|")
-        lines.append(f"| `{name}` | {the_type_of(definition)} | {description} |")
+        lines.append(
+            f"| `{name}` | {the_type_of(definition, definitions)} | {description} |"
+        )
     return lines
 
 

@@ -28,6 +28,51 @@ point. A sweep is one level higher: a whole subnet notices.
 
 ---
 
+## The engines and the levels
+
+`discovery.service.enumerate` can be run by two engines.
+
+The **native** engine is NetForge itself: it opens a connection to each
+port and asks the system's own services database for the name. It needs
+nothing but Python, and it is the default.
+
+The **nmap** engine runs nmap, when it is installed. nmap probes the
+open ports with the service probes of its own database, so it names the
+product and the version behind a port — `OpenSSH 10.2p1`, `dnsmasq
+2.92` — and not only the service. When nmap is not installed the
+native engine does the work and the response says so.
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 --engine nmap
+```
+
+Both engines take the **aggressiveness** of the scan: how hard it
+pushes, and how visible it is on the target.
+
+| Level | What it does |
+|---|---|
+| `paranoid` | one probe at a time, a second between them, and a long patience |
+| `stealth` | one probe at a time, half a second between them, and no handshake when nmap and root allow it |
+| `polite` | a few probes at a time, and a tenth of a second between them |
+| `normal` | the default: the speed the operation had before the levels existed |
+| `aggressive` | as many probes at once as the target will take, and no waiting |
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 --aggressiveness polite
+```
+
+The level is the pacing: how many probes run at once, how patient each
+one is, and how long the scan waits between them. What is on the wire is
+the engine's business — the native engine opens a connection per port,
+which the target sees, and nmap can be asked for a half-open scan, which
+it cannot. A half-open scan needs root; without it, the response says
+that the scan was a connect scan.
+
+The levels and their profiles are described in
+[the models](../../models/docs/README.md#the-levels-of-a-scan).
+
+---
+
 ## The parsers
 
 Both are pure functions over text, and both are exported.

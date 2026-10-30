@@ -19,8 +19,10 @@ Probes a set of TCP ports on a host and reports which of them are open, together
 |---|---|---|---|
 | `host` | string | — | **Required.** The host to inspect. |
 | `ports` | list of integer | — | The ports to probe. An empty list uses the common set. |
-| `timeout` | number | `2.0` | Connect timeout per port. |
-| `concurrency` | integer | `32` | How many probes to run at once. (at least 1, at most 256) |
+| `timeout` | number | — | Connect timeout per port. The level decides when it is not given. |
+| `concurrency` | integer | — | How many probes to run at once. The level decides when it is not given. |
+| `engine` | "native" or "nmap" | `"native"` | The scanner that runs the scan: the native one, or nmap. |
+| `aggressiveness` | "paranoid" or "stealth" or "polite" or "normal" or "aggressive" | `"normal"` | How hard the scan pushes, and how visible it is on the target. |
 
 ## The response
 
@@ -34,6 +36,8 @@ Probes a set of TCP ports on a host and reports which of them are open, together
 | `open_ports` | list of object | The ports that were open, and the services on them. |
 | `closed_ports` | list of integer | The ports that were closed. |
 | `scanned` | integer | How many ports were probed. |
+| `engine` | string | The scanner that ran the scan. |
+| `aggressiveness` | string | The level the scan was run at. |
 
 ## Using it
 

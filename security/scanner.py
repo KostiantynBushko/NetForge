@@ -22,9 +22,12 @@ from pydantic import Field
 from netforge.core.context import ExecutionContext
 from netforge.core.logging import get_logger
 from netforge.core.operation import Operation
+from netforge.core.runner import which
+from netforge.discovery import nmap
 from netforge.models.base import RequestModel, ResponseModel
 from netforge.models.capability import CapabilityCategory
 from netforge.models.risk import RiskLevel
+from netforge.models.scanning import Aggressiveness, ScanEngine, the_profile
 
 __all__ = [
     "PortScanRequest",
@@ -53,6 +56,7 @@ class ScanResult:
             "state": self.state,
             "latency_ms": round(self.latency_ms, 3) if self.latency_ms is not None else None,
             "service": self.service,
+            "version": None,
         }
 
 
@@ -121,8 +125,25 @@ class PortScanRequest(RequestModel):
         default_factory=lambda: [22, 80, 443],
         description="The ports to scan. A list of numbers, or a string of numbers and ranges.",
     )
-    timeout: float | None = Field(default=2.0, gt=0.0, description="Connect timeout per port.")
-    concurrency: int = Field(default=64, ge=1, le=1024, description="How many ports to probe at once.")
+    timeout: float | None = Field(
+        default=None,
+        gt=0.0,
+        description="Connect timeout per port. The level decides when it is not given.",
+    )
+    concurrency: int | None = Field(
+        default=None,
+        ge=1,
+        le=1024,
+        description="How many ports to probe at once. The level decides when it is not given.",
+    )
+    engine: ScanEngine = Field(
+        default=ScanEngine.NATIVE,
+        description="The scanner that runs the scan: the native one, or nmap.",
+    )
+    aggressiveness: Aggressiveness = Field(
+        default=Aggressiveness.NORMAL,
+        description="How hard the scan pushes, and how visible it is on the target.",
+    )
 
 
 class PortScanResponse(ResponseModel):
@@ -135,6 +156,10 @@ class PortScanResponse(ResponseModel):
     filtered_ports: list[int] = Field(default_factory=list, description="The ports that were filtered.")
     scanned: int = Field(default=0, description="How many ports were scanned.")
     duration_ms: float = Field(default=0.0, description="How long the scan took, in milliseconds.")
+    engine: str = Field(default="native", description="The scanner that ran the scan.")
+    aggressiveness: str = Field(
+        default="normal", description="The level the scan was run at."
+    )
 
 
 class PortScannerOperation(Operation[PortScanRequest, PortScanResponse]):
@@ -159,6 +184,14 @@ class PortScannerOperation(Operation[PortScanRequest, PortScanResponse]):
         self, request: PortScanRequest, context: ExecutionContext
     ) -> PortScanResponse:
         """Scan the ports."""
+        if request.engine is ScanEngine.NMAP:
+            return await self._with_nmap(request, context)
+        return await self._with_the_native_scanner(request, context)
+
+    async def _with_the_native_scanner(
+        self, request: PortScanRequest, context: ExecutionContext
+    ) -> PortScanResponse:
+        """Scan the ports with the scanner of NetForge itself."""
         try:
             ports = expand_ports(request.ports)
         except (TypeError, ValueError) as exc:
@@ -171,11 +204,16 @@ class PortScannerOperation(Operation[PortScanRequest, PortScanResponse]):
                 warnings=[f"the port specification could not be read: {exc}"],
             )
 
-        semaphore = asyncio.Semaphore(request.concurrency)
-        timeout = request.timeout or 2.0
+        profile = the_profile(request.aggressiveness)
+        timeout = profile.the_timeout(request.timeout or 2.0)
+        concurrency = profile.the_concurrency(request.concurrency or 64)
+        semaphore = asyncio.Semaphore(concurrency)
 
         async def probe(port: int) -> ScanResult:
             async with semaphore:
+                if profile.delay:
+                    # The level asked for a pause between the probes.
+                    await asyncio.sleep(profile.delay)
                 return await scan_port(request.host, port, timeout=timeout)
 
         started = time.perf_counter()
@@ -193,4 +231,85 @@ class PortScannerOperation(Operation[PortScanRequest, PortScanResponse]):
             closed_ports=[result.port for result in ordered if result.state == "closed"],
             filtered_ports=[result.port for result in ordered if result.state == "filtered"],
             scanned=len(ordered),
+            engine=request.engine.value,
+            aggressiveness=request.aggressiveness.value,
+        )
+
+    async def _with_nmap(
+        self, request: PortScanRequest, context: ExecutionContext
+    ) -> PortScanResponse:
+        """Scan the ports with nmap."""
+        started = time.perf_counter()
+        profile = the_profile(request.aggressiveness)
+        timeout = profile.the_timeout(request.timeout or 2.0)
+        root = nmap.is_root()
+        warnings = list(nmap.the_warnings(request.aggressiveness, root))
+
+        if which("nmap") is None:
+            # nmap was asked for and is not there: the native scanner
+            # does the work, and the response says so.
+            response = await self._with_the_native_scanner(request, context)
+            response.warnings.append(
+                "nmap is not installed; the native scanner was used instead"
+            )
+            response.engine = request.engine.value
+            response.aggressiveness = request.aggressiveness.value
+            return response
+
+        specification = (
+            request.ports
+            if isinstance(request.ports, str)
+            else ",".join(str(port) for port in request.ports)
+        )
+        arguments = nmap.the_arguments(
+            host=request.host,
+            ports=specification,
+            level=request.aggressiveness,
+            timeout=timeout,
+            root=root,
+        )
+        result = await context.runner().run(arguments, timeout=context.timeout)
+        if not result.ok:
+            detail = (result.stderr or result.stdout).strip()
+            return PortScanResponse(
+                operation=self.name,
+                risk_level=self.risk_level.label,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                host=request.host,
+                results=[],
+                scanned=0,
+                engine=request.engine.value,
+                aggressiveness=request.aggressiveness.value,
+                warnings=[f"nmap exited with the status {result.returncode}: {detail}"],
+            )
+
+        try:
+            found = nmap.parse_nmap_xml(result.stdout)
+        except ValueError as exc:
+            return PortScanResponse(
+                operation=self.name,
+                risk_level=self.risk_level.label,
+                duration_ms=(time.perf_counter() - started) * 1000.0,
+                host=request.host,
+                results=[],
+                scanned=0,
+                engine=request.engine.value,
+                aggressiveness=request.aggressiveness.value,
+                warnings=[str(exc)],
+            )
+
+        warnings.extend(found.warnings)
+        return PortScanResponse(
+            operation=self.name,
+            risk_level=self.risk_level.label,
+            duration_ms=(time.perf_counter() - started) * 1000.0,
+            host=request.host,
+            results=found.ports,
+            open_ports=found.open_ports,
+            closed_ports=found.closed_ports,
+            filtered_ports=found.filtered_ports,
+            scanned=found.scanned,
+            engine=request.engine.value,
+            aggressiveness=request.aggressiveness.value,
+            warnings=warnings,
         )

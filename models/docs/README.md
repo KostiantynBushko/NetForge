@@ -58,6 +58,42 @@ ceiling is the stricter of the first two; the third is always checked.
 
 ---
 
+## The levels of a scan
+
+`Aggressiveness` is how hard a scan pushes, and how much of a trace it
+leaves behind. A scan is loud: every probe is a packet the target, or
+the equipment in front of it, can see, and a scan that comes in a hurry
+is easy to tell from the traffic around it.
+
+| Level | What it does |
+|---|---|
+| `paranoid` | one probe at a time, a second between them, and a long patience |
+| `stealth` | one probe at a time, half a second between them, and no handshake when nmap and root allow it |
+| `polite` | a few probes at a time, and a tenth of a second between them |
+| `normal` | the default: the speed the operation had before the levels existed |
+| `aggressive` | as many probes at once as the target will take, and no waiting |
+
+The level is a `ScanProfile`: how many probes run at once, how patient
+each one is, and how long the scan waits between them. A profile that
+leaves something out means *the operation keeps its own default* — so
+the normal level changes nothing at all, and a caller who wants a
+particular timeout can still give one.
+
+```python
+from netforge.models.scanning import Aggressiveness, the_profile
+
+profile = the_profile(Aggressiveness.PARANOID)
+profile.the_concurrency(32)   # 1
+profile.the_timeout(2.0)      # 10.0
+profile.delay                 # 1.0
+```
+
+`ScanEngine` is the implementation that runs the scan: `native`, which
+is NetForge itself on the standard library alone, or `nmap`, when it is
+installed.
+
+---
+
 ## The capability categories
 
 `CapabilityCategory` is the kind of capability an operation provides. It
