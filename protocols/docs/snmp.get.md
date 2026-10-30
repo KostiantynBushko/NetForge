@@ -43,8 +43,10 @@ Performs an SNMP GET against an agent and returns the value of the OID. SNMPv1 a
 ### From the command line
 
 ```console
-$ netforge run protocols.snmp.get --host <string> --oid <string>
+$ netforge run protocols.snmp.get --request '{"host": "...", "oid": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

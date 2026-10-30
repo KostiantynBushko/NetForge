@@ -38,8 +38,10 @@ Runs traceroute towards a host and reports each hop, the address it answered fro
 ### From the command line
 
 ```console
-$ netforge run discovery.traceroute --host <string>
+$ netforge run discovery.traceroute --request '{"host": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

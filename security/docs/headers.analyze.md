@@ -40,8 +40,10 @@ Checks a set of HTTP response headers against the security headers that should b
 ### From the command line
 
 ```console
-$ netforge run security.headers.analyze
+$ netforge run security.headers.analyze --request '{}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

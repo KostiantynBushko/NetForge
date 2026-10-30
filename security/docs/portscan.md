@@ -42,8 +42,10 @@ Probes the TCP ports of a host and reports each one as open, closed or filtered.
 ### From the command line
 
 ```console
-$ netforge run security.portscan --host <string>
+$ netforge run security.portscan --request '{"host": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

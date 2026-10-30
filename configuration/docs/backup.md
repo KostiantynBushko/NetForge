@@ -43,8 +43,10 @@ Reads a configuration file from a device over SSH and returns its contents. The 
 ### From the command line
 
 ```console
-$ netforge run configuration.backup --host <string> --path <string>
+$ netforge run configuration.backup --request '{"host": "...", "path": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

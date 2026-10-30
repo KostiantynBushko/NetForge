@@ -42,8 +42,10 @@ Expands a CIDR block, an address range or a single address and pings every host 
 ### From the command line
 
 ```console
-$ netforge run discovery.ping.sweep --network <string>
+$ netforge run discovery.ping.sweep --request '{"network": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

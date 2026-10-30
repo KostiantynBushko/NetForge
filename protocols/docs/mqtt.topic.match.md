@@ -37,8 +37,10 @@ Tests a set of MQTT topics against a set of topic filters and reports which filt
 ### From the command line
 
 ```console
-$ netforge run protocols.mqtt.topic.match --filters <list-of-string> --topics <list-of-string>
+$ netforge run protocols.mqtt.topic.match --request '{"filters": [], "topics": []}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

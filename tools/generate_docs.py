@@ -423,8 +423,11 @@ def the_operation_page(descriptor: Any) -> str:
         "### From the command line",
         "",
         "```console",
-        f"$ netforge run {name}" + the_cli_arguments(parameters),
+        f"$ netforge run {name}" + the_cli_request(parameters),
         "```",
+        "",
+        "The request is a JSON object, and the values above are "
+        "placeholders.",
         "",
         "### From Python",
         "",
@@ -471,13 +474,31 @@ def the_response_section(descriptor: Any) -> list[str]:
     return lines
 
 
-def the_cli_arguments(parameters: list[dict[str, Any]]) -> str:
-    """The command-line arguments of an operation."""
-    return "".join(
-        f" --{parameter['name'].replace('_', '-')} <{parameter['type'].replace(' ', '-')}>"
+def the_placeholder_of(kind: str) -> Any:
+    """A placeholder of the shape of a value, for the examples."""
+    if kind in ("integer", "number"):
+        return 0
+    if kind == "boolean":
+        return False
+    if kind.startswith("list"):
+        return []
+    if kind == "object":
+        return {}
+    return "..."
+
+
+def the_cli_request(parameters: list[dict[str, Any]]) -> str:
+    """The command line of an operation.
+
+    The command line takes the request as a JSON object, the way the
+    adapter takes it -- not one flag per parameter.
+    """
+    payload = {
+        parameter["name"]: the_placeholder_of(parameter["type"])
         for parameter in parameters
         if parameter["required"]
-    )
+    }
+    return " --request '" + json.dumps(payload) + "'"
 
 
 def the_python_arguments(parameters: list[dict[str, Any]]) -> str:

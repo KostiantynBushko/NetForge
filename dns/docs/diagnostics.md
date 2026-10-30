@@ -42,8 +42,10 @@ Fetches the SPF and DMARC records of a domain, parses them and reports what they
 ### From the command line
 
 ```console
-$ netforge run dns.diagnostics --domain <string>
+$ netforge run dns.diagnostics --request '{"domain": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

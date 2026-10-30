@@ -51,8 +51,10 @@ Runs a packet capture on an interface for a fixed duration and writes the result
 ### From the command line
 
 ```console
-$ netforge run capture.session --output <string>
+$ netforge run capture.session --request '{"output": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

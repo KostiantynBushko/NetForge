@@ -41,8 +41,10 @@ Connects to a service and reads the banner it sends, optionally sending the prot
 ### From the command line
 
 ```console
-$ netforge run security.banner --host <string> --port <integer>
+$ netforge run security.banner --request '{"host": "...", "port": 0}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

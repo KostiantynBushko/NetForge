@@ -37,8 +37,10 @@ Reads the kernel's ARP neighbour table and returns the IP address, the hardware 
 ### From the command line
 
 ```console
-$ netforge run discovery.arp.table
+$ netforge run discovery.arp.table --request '{}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

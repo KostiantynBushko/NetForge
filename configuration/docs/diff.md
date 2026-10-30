@@ -37,8 +37,10 @@ Produces a unified diff between the current configuration and a candidate one. I
 ### From the command line
 
 ```console
-$ netforge run configuration.diff --current <string> --candidate <string>
+$ netforge run configuration.diff --request '{"current": "...", "candidate": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

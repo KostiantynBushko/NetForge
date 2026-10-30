@@ -12,6 +12,7 @@ The tests are the reason the documentation cannot quietly rot.
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -188,6 +189,42 @@ class TestEveryPackageHasAnEntryPoint:
             for descriptor in operations:
                 page = the_page_of(descriptor.name, category)
                 assert f"]({page.name})" in text, f"{category}: {descriptor.name}"
+
+
+class TestTheCommandLineExamples:
+    """The examples must be the ones the adapter actually takes.
+
+    The command line takes the request as a JSON object, not one flag
+    per parameter.  An example that shows the wrong command line is
+    worse than no example at all.
+    """
+
+    def the_example(self, text: str) -> str:
+        """The request of the command-line example of a page."""
+        match = re.search(r"\$ netforge run \S+ --request '([^']+)'", text)
+        assert match is not None, "the page has no command-line example"
+        return match.group(1)
+
+    def test_every_example_is_valid_json(self, descriptors):
+        for descriptor in descriptors:
+            page = the_page_of(descriptor.name, descriptor.category.value)
+            payload = json.loads(self.the_example(page.read_text(encoding="utf-8")))
+            assert isinstance(payload, dict), page
+
+    def test_every_example_carries_the_required_parameters(self, descriptors):
+        for descriptor in descriptors:
+            page = the_page_of(descriptor.name, descriptor.category.value)
+            text = page.read_text(encoding="utf-8")
+            payload = json.loads(self.the_example(text))
+            schema = descriptor.request_schema or {}
+            for name in schema.get("required") or []:
+                assert name in payload, f"{page}: the required parameter {name}"
+
+    def test_every_example_names_the_operation(self, descriptors):
+        for descriptor in descriptors:
+            page = the_page_of(descriptor.name, descriptor.category.value)
+            text = page.read_text(encoding="utf-8")
+            assert f"$ netforge run {descriptor.name} " in text, page
 
 
 class TestTheTopLevelReadme:

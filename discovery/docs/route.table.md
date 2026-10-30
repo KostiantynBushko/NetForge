@@ -36,8 +36,10 @@ Reads the kernel's routing table and returns the destination, the gateway, the n
 ### From the command line
 
 ```console
-$ netforge run discovery.route.table
+$ netforge run discovery.route.table --request '{}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

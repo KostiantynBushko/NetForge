@@ -44,8 +44,10 @@ Writes a configuration file onto a device over SSH, copying the current file asi
 ### From the command line
 
 ```console
-$ netforge run configuration.restore --host <string> --path <string> --content <string>
+$ netforge run configuration.restore --request '{"host": "...", "path": "...", "content": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

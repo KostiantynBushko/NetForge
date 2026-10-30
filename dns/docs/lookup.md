@@ -41,8 +41,10 @@ Resolves a DNS name and returns the records that were found. Address records are
 ### From the command line
 
 ```console
-$ netforge run dns.lookup --name <string>
+$ netforge run dns.lookup --request '{"name": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

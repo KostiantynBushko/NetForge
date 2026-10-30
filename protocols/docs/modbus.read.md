@@ -45,8 +45,10 @@ Reads holding registers (function code 3) or coils (function code 1) from a Modb
 ### From the command line
 
 ```console
-$ netforge run protocols.modbus.read --host <string>
+$ netforge run protocols.modbus.read --request '{"host": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

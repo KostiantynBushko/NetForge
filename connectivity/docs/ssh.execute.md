@@ -44,8 +44,10 @@ Runs a shell command on a remote host over SSH and returns its exit code and out
 ### From the command line
 
 ```console
-$ netforge run connectivity.ssh.execute --host <string> --command <string>
+$ netforge run connectivity.ssh.execute --request '{"host": "...", "command": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

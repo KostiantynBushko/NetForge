@@ -42,8 +42,10 @@ Attempts a TCP connection to the given host and port and reports reachability, t
 ### From the command line
 
 ```console
-$ netforge run connectivity.tcp.connect --host <string> --port <integer>
+$ netforge run connectivity.tcp.connect --request '{"host": "...", "port": 0}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

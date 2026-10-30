@@ -44,8 +44,10 @@ Connects to a TLS endpoint and reports the negotiated protocol version, the ciph
 ### From the command line
 
 ```console
-$ netforge run security.tls.inspect --host <string>
+$ netforge run security.tls.inspect --request '{"host": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

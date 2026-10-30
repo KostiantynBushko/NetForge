@@ -38,8 +38,10 @@ Parses an OPC UA endpoint URL and reports the transport, the port and the securi
 ### From the command line
 
 ```console
-$ netforge run protocols.opcua.endpoint --url <string>
+$ netforge run protocols.opcua.endpoint --request '{"url": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 

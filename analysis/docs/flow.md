@@ -37,8 +37,10 @@ Reads a libpcap capture file, aggregates its packets into flows and reports the 
 ### From the command line
 
 ```console
-$ netforge run analysis.flow --path <string>
+$ netforge run analysis.flow --request '{"path": "..."}'
 ```
+
+The request is a JSON object, and the values above are placeholders.
 
 ### From Python
 
