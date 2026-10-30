@@ -1,0 +1,33 @@
+# NetForge -- dependencies for a working checkout.
+#
+# The framework is *first*: the core depends on Pydantic and the standard
+# library only, and every ecosystem integration is an optional extra.  This
+# file installs the complete set, so a checkout is immediately usable.
+#
+# To install a subset instead, use the extras declared in pyproject.toml:
+#
+#     pip install -e .            # the framework only
+#     pip install -e '.[rest]'    # one integration
+#     pip install -e '.[all]'     # every integration
+#
+# The version bounds match pyproject.toml.
+
+# -- core ---------------------------------------------------------------
+# The framework's only runtime dependency.
+pydantic>=2.7
+
+# -- integrations -------------------------------------------------------
+# Adapters and capabilities.  Each is imported lazily, so a missing one
+# degrades a single capability instead of breaking the import.
+fastapi>=0.110
+uvicorn>=0.29
+mcp>=1.2
+llama-index-core>=0.12
+asyncssh>=2.14
+dnspython>=2.6
+paho-mqtt>=2.0
+asyncua>=1.1
+
+# -- development --------------------------------------------------------
+pytest>=8.0
+pytest-asyncio>=0.23
