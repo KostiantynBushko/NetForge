@@ -2,10 +2,14 @@
 
 This folder is the entry point to everything NetForge is documented in.
 
-Every package that publishes an operation has a **folder of its own**: the
-entry point of the package, and one page per operation. The architecture
+Every package has a **folder of its own, inside the package**: the entry
+point of the package, and one page per operation. The architecture
 document explains how the modules fit together and why; the package
 documents explain what each one does.
+
+The documentation lives with the code it describes — `connectivity/docs/`
+belongs to `connectivity/` — so that a package and its documentation are
+never apart.
 
 ---
 
@@ -21,21 +25,22 @@ documents explain what each one does.
 ## The capability packages
 
 These ten packages publish the thirty operations that `netforge list`
-prints. Each has a folder: its entry point is the `README.md` of the
-folder, and every operation it publishes has a page of its own.
+prints. Each has a folder of its own, inside the package: the entry point
+is the `README.md` of the folder, and every operation it publishes has a
+page of its own.
 
 | Package | Operations | What it is for | Entry point |
 |---|---|---|---|
-| `netforge.connectivity` | 4 | Reaching remote systems: SSH, HTTP, TCP, UDP. | [connectivity](connectivity/README.md) |
-| `netforge.discovery` | 6 | What is out there: ping, sweeps, traceroute, ARP, routes, services. | [discovery](discovery/README.md) |
-| `netforge.dns` | 2 | Resolving names, and diagnosing the SPF and DMARC policies that live in DNS. | [dns](dns/README.md) |
-| `netforge.protocols` | 5 | Speaking the wire protocols: HTTP, SNMP, Modbus TCP, MQTT, OPC UA. | [protocols](protocols/README.md) |
-| `netforge.capture` | 1 | Capturing traffic into a libpcap file. | [capture](capture/README.md) |
-| `netforge.analysis` | 1 | Reading a capture back and reporting what it means. | [analysis](analysis/README.md) |
-| `netforge.configuration` | 4 | Reading, checking, comparing and writing a device's configuration. | [configuration](configuration/README.md) |
-| `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](security/README.md) |
-| `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](manipulation/README.md) |
-| `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](emulation/README.md) |
+| `netforge.connectivity` | 4 | Reaching remote systems: SSH, HTTP, TCP, UDP. | [connectivity](../connectivity/docs/README.md) |
+| `netforge.discovery` | 6 | What is out there: ping, sweeps, traceroute, ARP, routes, services. | [discovery](../discovery/docs/README.md) |
+| `netforge.dns` | 2 | Resolving names, and diagnosing the SPF and DMARC policies that live in DNS. | [dns](../dns/docs/README.md) |
+| `netforge.protocols` | 5 | Speaking the wire protocols: HTTP, SNMP, Modbus TCP, MQTT, OPC UA. | [protocols](../protocols/docs/README.md) |
+| `netforge.capture` | 1 | Capturing traffic into a libpcap file. | [capture](../capture/docs/README.md) |
+| `netforge.analysis` | 1 | Reading a capture back and reporting what it means. | [analysis](../analysis/docs/README.md) |
+| `netforge.configuration` | 4 | Reading, checking, comparing and writing a device's configuration. | [configuration](../configuration/docs/README.md) |
+| `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](../security/docs/README.md) |
+| `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](../manipulation/docs/README.md) |
+| `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](../emulation/docs/README.md) |
 
 ---
 
@@ -43,14 +48,15 @@ folder, and every operation it publishes has a page of its own.
 
 These four modules make NetForge a framework rather than a script. They
 depend on Pydantic and the standard library, and on nothing else. They
-publish no operations, so they have no folder — one document each.
+publish no operations, so they have no operation pages — but their
+documentation lives in their own folder too, the same way.
 
 | Module | What it is for | Document |
 |---|---|---|
-| `netforge.core` | The operation contract, the execution context, the configuration, the exception hierarchy, the command runner and the native seam. | [core.md](core.md) |
-| `netforge.models` | Every model that crosses a boundary: requests, responses, execution metadata, risk levels and capability categories. | [models.md](models.md) |
-| `netforge.registry` | The catalogue. The only source of truth about what NetForge can do. | [registry.md](registry.md) |
-| `netforge.plugins` | The extension point. How a third party adds operations. | [plugins.md](plugins.md) |
+| `netforge.core` | The operation contract, the execution context, the configuration, the exception hierarchy, the command runner and the native seam. | [core.md](../core/docs/README.md) |
+| `netforge.models` | Every model that crosses a boundary: requests, responses, execution metadata, risk levels and capability categories. | [models.md](../models/docs/README.md) |
+| `netforge.registry` | The catalogue. The only source of truth about what NetForge can do. | [registry.md](../registry/docs/README.md) |
+| `netforge.plugins` | The extension point. How a third party adds operations. | [plugins.md](../plugins/docs/README.md) |
 
 ---
 
@@ -60,7 +66,7 @@ One contract, four renderings of the same catalogue.
 
 | Module | What it is for | Document |
 |---|---|---|
-| `netforge.adapters` | The command line, the REST API, MCP and LlamaIndex. Every adapter reads the registry; none of them reimplements a capability. | [adapters.md](adapters.md) |
+| `netforge.adapters` | The command line, the REST API, MCP and LlamaIndex. Every adapter reads the registry; none of them reimplements a capability. | [adapters.md](../adapters/docs/README.md) |
 
 ---
 

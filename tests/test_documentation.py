@@ -2,9 +2,10 @@
 
 The registry is the only source of truth about what NetForge can do.  The
 documentation is derived from it, and these tests are what keeps the
-derivation honest: a package that publishes an operation has a page, the
-page names the operation, the top-level README links to the entry point
-of every package, and every link in the documentation resolves.
+derivation honest: the documentation of a package lives in the package, a
+package that publishes an operation has a page for it, the page names the
+operation, the top-level README links to the entry point of every
+package, and every link in the documentation resolves.
 
 The tests are the reason the documentation cannot quietly rot.
 """
@@ -24,6 +25,25 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from netforge.core.bootstrap import builtin_registry  # noqa: E402
+
+#: The packages of the project, as the distribution declares them.
+PACKAGES = [
+    "adapters",
+    "analysis",
+    "capture",
+    "configuration",
+    "connectivity",
+    "core",
+    "discovery",
+    "dns",
+    "emulation",
+    "manipulation",
+    "models",
+    "plugins",
+    "protocols",
+    "registry",
+    "security",
+]
 
 #: A link inside a markdown document.
 LINK = re.compile(r"\]\(([^)]+)\)")
@@ -52,11 +72,48 @@ def the_packages(descriptors) -> dict[str, list]:
     return grouped
 
 
+def the_folder_of(package: str) -> Path:
+    """The documentation folder of a package."""
+    return ROOT / package / "docs"
+
+
+def the_entry_of(package: str) -> Path:
+    """The entry point of the documentation of a package."""
+    return the_folder_of(package) / "README.md"
+
+
 def the_page_of(operation: str, category: str) -> Path:
     """The path of the page of an operation."""
     prefix = f"{category}."
     name = operation[len(prefix):] if operation.startswith(prefix) else operation
-    return DOCS / category / f"{name}.md"
+    return the_folder_of(category) / f"{name}.md"
+
+
+class TestTheDocumentationLivesInThePackage:
+    """The documentation of a package belongs to the package."""
+
+    def test_every_package_has_a_documentation_folder(self):
+        missing = [
+            package
+            for package in PACKAGES
+            if not the_folder_of(package).is_dir()
+        ]
+        assert missing == [], f"these packages have no docs folder: {missing}"
+
+    def test_every_package_has_an_entry_point(self):
+        missing = [
+            package for package in PACKAGES if not the_entry_of(package).is_file()
+        ]
+        assert missing == [], f"these packages have no entry point: {missing}"
+
+    def test_the_entry_point_is_inside_the_package(self):
+        for package in PACKAGES:
+            entry = the_entry_of(package)
+            assert entry.parent.parent.name == package, entry
+
+    def test_no_documentation_is_left_in_the_project_folder(self):
+        loose = sorted(path.name for path in DOCS.glob("*.md"))
+        assert loose == ["ARCHITECTURE.md", "README.md"], loose
 
 
 class TestEveryOperationHasAPage:
@@ -114,36 +171,34 @@ class TestEveryOperationHasAPage:
 class TestEveryPackageHasAnEntryPoint:
     """The folders of the packages."""
 
-    def test_every_package_has_a_folder(self, descriptors):
-        for category in the_packages(descriptors):
-            assert (DOCS / category).is_dir(), f"{category} has no folder"
-
-    def test_every_package_has_an_entry_point(self, descriptors):
-        for category in the_packages(descriptors):
-            entry = DOCS / category / "README.md"
-            assert entry.is_file(), f"{category} has no entry point"
-
     def test_the_entry_point_lists_every_operation(self, descriptors):
         for category, operations in the_packages(descriptors).items():
-            text = (DOCS / category / "README.md").read_text(encoding="utf-8")
+            text = the_entry_of(category).read_text(encoding="utf-8")
             for descriptor in operations:
                 assert descriptor.name in text, f"{category}: {descriptor.name}"
 
     def test_the_entry_point_lists_the_public_api(self, descriptors):
         for category in the_packages(descriptors):
-            text = (DOCS / category / "README.md").read_text(encoding="utf-8")
+            text = the_entry_of(category).read_text(encoding="utf-8")
             assert "<!-- generated:public-api -->" in text, category
+
+    def test_the_entry_point_links_to_its_operations(self, descriptors):
+        for category, operations in the_packages(descriptors).items():
+            text = the_entry_of(category).read_text(encoding="utf-8")
+            for descriptor in operations:
+                page = the_page_of(descriptor.name, category)
+                assert f"]({page.name})" in text, f"{category}: {descriptor.name}"
 
 
 class TestTheTopLevelReadme:
     """The entry point of every package has to be reachable from the README."""
 
-    def test_the_readme_links_to_every_entry_point(self, descriptors):
+    def test_the_readme_links_to_every_entry_point(self):
         text = (ROOT / "README.md").read_text(encoding="utf-8")
         missing = [
-            category
-            for category in the_packages(descriptors)
-            if f"docs/{category}/README.md" not in text
+            package
+            for package in PACKAGES
+            if f"{package}/docs/README.md" not in text
         ]
         assert missing == [], f"the README does not link to: {missing}"
 
@@ -157,6 +212,8 @@ class TestEveryLinkResolves:
 
     def the_documents(self):
         yield from sorted(DOCS.rglob("*.md"))
+        for package in PACKAGES:
+            yield from sorted(the_folder_of(package).rglob("*.md"))
 
     def test_every_link_resolves(self):
         broken = []

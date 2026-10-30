@@ -37,7 +37,18 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
+
+#: The documentation of the project itself: the index and the architecture.
 DOCS = ROOT / "docs"
+
+
+def the_folder_of(category: str) -> Path:
+    """The documentation folder of a package.
+
+    The documentation of a package lives *in* the package: the folder
+    belongs to the code it describes, and travels with it.
+    """
+    return ROOT / category / "docs"
 
 #: The marker that opens a generated block.
 BEGIN = "<!-- generated:{name} -->"
@@ -435,8 +446,8 @@ def the_operation_page(descriptor: Any) -> str:
         "## See also",
         "",
         f"* [the `{category}` package](README.md) — every operation it publishes",
-        "* [the architecture](../ARCHITECTURE.md) — how the pieces fit together",
-        "* [the documentation index](../README.md)",
+        "* [the architecture](../../docs/ARCHITECTURE.md) — how the pieces fit together",
+        "* [the documentation index](../../docs/README.md)",
         "",
     ]
 
@@ -552,7 +563,7 @@ def generate(write: bool = True) -> list[str]:
     changed: list[str] = []
 
     for category, category_descriptors in sorted(by_category.items()):
-        folder = DOCS / category
+        folder = the_folder_of(category)
 
         # -- the operation pages -----------------------------------------
         for descriptor in category_descriptors:

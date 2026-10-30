@@ -240,39 +240,40 @@ The caller never learns which implementation served an operation.
 ## Documentation
 
 [docs/README.md](docs/README.md) is the entry point to everything NetForge
-is documented in. Every package that publishes an operation has a **folder
-of its own** — the entry point of the package, and one page per operation
-— and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains how the
-modules fit together and why.
+is documented in. Every package has a **folder of its own, inside the
+package** — the entry point of the package, and one page per operation —
+and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains how the modules
+fit together and why.
 
 ### The capability packages
 
 These are the ten packages `netforge list` prints, and the thirty
-operations they publish.
+operations they publish. The documentation of each one is in its own
+folder, inside the package.
 
 | Package | Operations | What it is for | Documentation |
 |---|---|---|---|
-| `netforge.connectivity` | 4 | Reaching remote systems: SSH, HTTP, TCP, UDP. | [connectivity](docs/connectivity/README.md) |
-| `netforge.discovery` | 6 | What is out there: ping, sweeps, traceroute, ARP, routes, services. | [discovery](docs/discovery/README.md) |
-| `netforge.dns` | 2 | Resolving names, and diagnosing the SPF and DMARC policies. | [dns](docs/dns/README.md) |
-| `netforge.protocols` | 5 | Speaking the wire protocols: HTTP, SNMP, Modbus TCP, MQTT, OPC UA. | [protocols](docs/protocols/README.md) |
-| `netforge.capture` | 1 | Capturing traffic into a libpcap file. | [capture](docs/capture/README.md) |
-| `netforge.analysis` | 1 | Reading a capture back and reporting what it means. | [analysis](docs/analysis/README.md) |
-| `netforge.configuration` | 4 | Reading, checking, comparing and writing a device's configuration. | [configuration](docs/configuration/README.md) |
-| `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](docs/security/README.md) |
-| `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](docs/manipulation/README.md) |
-| `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](docs/emulation/README.md) |
+| `netforge.connectivity` | 4 | Reaching remote systems: SSH, HTTP, TCP, UDP. | [connectivity](connectivity/docs/README.md) |
+| `netforge.discovery` | 6 | What is out there: ping, sweeps, traceroute, ARP, routes, services. | [discovery](discovery/docs/README.md) |
+| `netforge.dns` | 2 | Resolving names, and diagnosing the SPF and DMARC policies. | [dns](dns/docs/README.md) |
+| `netforge.protocols` | 5 | Speaking the wire protocols: HTTP, SNMP, Modbus TCP, MQTT, OPC UA. | [protocols](protocols/docs/README.md) |
+| `netforge.capture` | 1 | Capturing traffic into a libpcap file. | [capture](capture/docs/README.md) |
+| `netforge.analysis` | 1 | Reading a capture back and reporting what it means. | [analysis](analysis/docs/README.md) |
+| `netforge.configuration` | 4 | Reading, checking, comparing and writing a device's configuration. | [configuration](configuration/docs/README.md) |
+| `netforge.security` | 4 | Assessment and diagnostics: port scanning, banners, TLS, security headers. | [security](security/docs/README.md) |
+| `netforge.manipulation` | 1 | Controlled modification of traffic, through a proxy. | [manipulation](manipulation/docs/README.md) |
+| `netforge.emulation` | 2 | Simulating the network a device is on. | [emulation](emulation/docs/README.md) |
 
 ### The framework
 
 | | |
 |---|---|
 | [The architecture](docs/ARCHITECTURE.md) | how the code is put together, and why |
-| [The core](docs/core.md) | the operation contract, the context, the configuration |
-| [The models](docs/models.md) | every model that crosses a boundary |
-| [The registry](docs/registry.md) | the catalogue — the only source of truth |
-| [The plugins](docs/plugins.md) | the extension point |
-| [The adapters](docs/adapters.md) | the CLI, the REST API, MCP and LlamaIndex |
+| [The core](core/docs/README.md) | the operation contract, the context, the configuration |
+| [The models](models/docs/README.md) | every model that crosses a boundary |
+| [The registry](registry/docs/README.md) | the catalogue — the only source of truth |
+| [The plugins](plugins/docs/README.md) | the extension point |
+| [The adapters](adapters/docs/README.md) | the CLI, the REST API, MCP and LlamaIndex |
 
 ---
 
