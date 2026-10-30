@@ -35,7 +35,6 @@ mcp = ["mcp>=1.2"]
 llamaindex = ["llama-index-core>=0.12"]
 ssh = ["asyncssh>=2.14"]
 dns = ["dnspython>=2.6"]
-capture = ["scapy>=2.5"]
 mqtt = ["paho-mqtt>=2.0"]
 opcua = ["asyncua>=1.1"]
 all = [
@@ -45,7 +44,6 @@ all = [
     "llama-index-core>=0.12",
     "asyncssh>=2.14",
     "dnspython>=2.6",
-    "scapy>=2.5",
     "paho-mqtt>=2.0",
     "asyncua>=1.1",
 ]
