@@ -12,9 +12,13 @@ running it there reports exactly what to install.
 
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
 import socket
+import sys
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 
 from pydantic import Field
 
@@ -69,15 +73,77 @@ class DnsRecord:
         return data
 
 
-def _load_dnspython():
+def _dnspython_package_dir() -> Path:
+    """Return the directory of dnspython's ``dns`` package.
+
+    The distribution is located through the installed metadata rather than
+    through ``sys.path``, so the answer does not depend on what happens to
+    shadow the name.
+    """
     try:
-        import dns.resolver  # noqa: F401
-    except ImportError as exc:  # pragma: no cover - depends on the environment
+        distribution = importlib.metadata.distribution("dnspython")
+    except importlib.metadata.PackageNotFoundError as exc:  # pragma: no cover
         raise DependencyMissingError(
             "dnspython",
             extra=DNS_EXTRA,
             feature="DNS record resolution",
         ) from exc
+    return Path(distribution.locate_file("dns"))
+
+
+def _bind_dnspython(package_dir: Path) -> None:
+    """Bind dnspython's ``dns`` package under the top-level name.
+
+    NetForge has a capability package called ``dns`` and dnspython ships a
+    package with the same name.  When the project root is on ``sys.path`` --
+    which is the case whenever NetForge runs from a checkout -- the local one
+    wins, and a plain ``import dns.resolver`` hands back NetForge's own
+    module rather than dnspython's.
+
+    So dnspython's package is bound under that name explicitly, replacing
+    whatever shadowed it.  Its submodules are then imported from dnspython,
+    because the bound package is what the import machinery resolves them
+    against.
+    """
+    existing = sys.modules.get("dns")
+    if existing is not None:
+        origin = getattr(existing, "__file__", None)
+        if origin is not None and Path(origin).resolve().parent == package_dir.resolve():
+            return  # already bound to dnspython
+
+    # Drop the shadow, and anything that was imported through it.
+    for name in [n for n in sys.modules if n == "dns" or n.startswith("dns.")]:
+        del sys.modules[name]
+
+    spec = importlib.util.spec_from_file_location(
+        "dns",
+        package_dir / "__init__.py",
+        submodule_search_locations=[str(package_dir)],
+    )
+    if spec is None or spec.loader is None:  # pragma: no cover - defensive
+        raise DependencyMissingError(
+            "dnspython",
+            extra=DNS_EXTRA,
+            feature="DNS record resolution",
+        )
+    module = importlib.util.module_from_spec(spec)
+    sys.modules["dns"] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:  # pragma: no cover - defensive
+        del sys.modules["dns"]
+        raise
+
+
+def _load_dnspython():
+    """Return dnspython's resolver module.
+
+    dnspython is located through its installed distribution and bound under
+    the ``dns`` name, so NetForge's own ``dns`` capability package can never
+    shadow it -- see :func:`_bind_dnspython`.
+    """
+    _bind_dnspython(_dnspython_package_dir())
+
     import dns.resolver
 
     return dns.resolver

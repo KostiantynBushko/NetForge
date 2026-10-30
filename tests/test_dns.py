@@ -2,6 +2,11 @@
 
 from __future__ import annotations
 
+import importlib.metadata
+import importlib.util
+import sys
+from pathlib import Path
+
 import pytest
 
 from netforge.dns.diagnostics import (
@@ -11,6 +16,7 @@ from netforge.dns.diagnostics import (
     parse_dmarc,
     parse_spf,
 )
+from netforge.dns.resolver import _load_dnspython
 
 SPF_STRICT = "v=spf1 ip4:192.0.2.0/24 include:example.com -all"
 SPF_RELAXED = "v=spf1 a mx ip4:198.51.100.7 ~all"
@@ -139,3 +145,59 @@ class TestDnsOperations:
         )
         assert any("authorises every sender" in finding for finding in response.findings)
         assert response.score < 100
+
+
+@pytest.fixture
+def shadowed_dns():
+    """Put the project root first on ``sys.path``, the way a checkout run does.
+
+    dnspython is an optional extra, so the tests that need it are skipped
+    when it is not installed.
+    """
+    try:
+        importlib.metadata.distribution("dnspython")
+    except importlib.metadata.PackageNotFoundError:
+        pytest.skip("dnspython is not installed")
+
+    root = str(Path(__file__).resolve().parent.parent)
+    saved_path = list(sys.path)
+    saved_modules = {k: v for k, v in sys.modules.items() if k == "dns" or k.startswith("dns.")}
+    for name in saved_modules:
+        del sys.modules[name]
+    sys.path.insert(0, root)
+    try:
+        yield root
+    finally:
+        sys.path[:] = saved_path
+        for name in [n for n in sys.modules if n == "dns" or n.startswith("dns.")]:
+            del sys.modules[name]
+        sys.modules.update(saved_modules)
+
+
+class TestDnspythonBinding:
+    """NetForge's own ``dns`` package must never shadow dnspython.
+
+    NetForge has a capability package called ``dns`` and dnspython ships a
+    package with the same name.  When the project root is on ``sys.path`` --
+    which is the case whenever NetForge runs from a checkout -- the local one
+    wins, so a plain ``import dns.resolver`` hands back NetForge's own module
+    instead of dnspython's.
+    """
+
+    def test_the_local_package_would_otherwise_win(self, shadowed_dns):
+        spec = importlib.util.find_spec("dns")
+        assert spec is not None
+        assert Path(spec.origin).resolve().parent == Path(shadowed_dns).resolve() / "dns"
+
+    def test_the_resolver_is_dnspythons(self, shadowed_dns):
+        module = _load_dnspython()
+        assert hasattr(module, "Resolver")
+
+    def test_the_resolver_module_comes_from_the_dnspython_distribution(self, shadowed_dns):
+        module = _load_dnspython()
+        expected = Path(importlib.metadata.distribution("dnspython").locate_file("dns"))
+        assert Path(module.__file__).resolve().parent == expected.resolve()
+
+    def test_the_resolver_is_usable(self, shadowed_dns):
+        resolver = _load_dnspython().Resolver()
+        assert resolver is not None
