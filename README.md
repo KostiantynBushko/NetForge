@@ -169,7 +169,8 @@ Every adapter reads from it, so a capability implemented once is available
 through every adapter without a second implementation.
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the design in detail and
-[NetForge.md](NetForge.md) for the specification it implements.
+[NetForge.md](NetForge.md) for the specification it implements. Every module
+has its own document as well — start at [the documentation index](docs/README.md).
 
 ---
 
@@ -233,6 +234,23 @@ native_registry.register(
 ```
 
 The caller never learns which implementation served an operation.
+
+---
+
+## Documentation
+
+[docs/README.md](docs/README.md) is the entry point to everything NetForge
+is documented in. There is one document per module — what it is for, the
+operations it publishes, the names it exports and how to use it — and
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) explains how the modules fit
+together and why.
+
+| | |
+|---|---|
+| [The architecture](docs/ARCHITECTURE.md) | how the code is put together, and why |
+| [The framework](docs/core.md) | the operation contract, the context, the configuration |
+| [The adapters](docs/adapters.md) | the CLI, the REST API, MCP and LlamaIndex |
+| [The capability packages](docs/README.md#the-capability-packages) | one document per capability |
 
 ---
 
