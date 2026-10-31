@@ -132,7 +132,7 @@ class ModbusTcpClient:
             writer.close()
             try:
                 await writer.wait_closed()
-            except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+            except (TimeoutError, OSError):  # pragma: no cover - best effort
                 pass
 
     def build_frame(self, function_code: int, data: bytes) -> bytes:
@@ -259,7 +259,7 @@ class ModbusTcpOperation(Operation[ModbusTcpRequest, ModbusTcpResponse]):
             else:
                 values = await client.read_holding_registers(request.address, request.count)
                 coils = []
-        except (OSError, asyncio.TimeoutError, ProtocolError) as exc:
+        except (TimeoutError, OSError, ProtocolError) as exc:
             return ModbusTcpResponse(
                 operation=self.name,
                 risk_level=self.risk_level.label,

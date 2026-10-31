@@ -15,8 +15,9 @@ native execution (:attr:`NetForgeConfig.allow_native`).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable
+from typing import Any
 
 from netforge.core.exceptions import ConfigurationError
 from netforge.core.logging import get_logger

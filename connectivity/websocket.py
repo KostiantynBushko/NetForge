@@ -212,7 +212,7 @@ class WebSocketConnection(Connection):
             try:
                 writer.close()
                 await writer.wait_closed()
-            except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+            except (TimeoutError, OSError):  # pragma: no cover - best effort
                 pass
         self.state = ConnectionState.CLOSED
 

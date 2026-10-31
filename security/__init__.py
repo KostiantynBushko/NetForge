@@ -20,9 +20,9 @@ from __future__ import annotations
 
 from netforge.security.banner import BannerGrabOperation, grab_banner
 from netforge.security.headers import (
+    SECURITY_HEADERS,
     HttpHeaderAnalysisOperation,
     analyze_headers,
-    SECURITY_HEADERS,
 )
 from netforge.security.scanner import PortScannerOperation, PortScanRequest, PortScanResponse
 from netforge.security.tls import TlsInspectionOperation, inspect_tls

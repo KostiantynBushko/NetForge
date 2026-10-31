@@ -4,10 +4,6 @@ from __future__ import annotations
 
 import textwrap
 
-from netforge.core.operation import Operation
-from netforge.models.base import RequestModel, ResponseModel
-from netforge.models.capability import CapabilityCategory
-from netforge.models.risk import RiskLevel
 from netforge.plugins.base import Plugin
 from netforge.plugins.manager import PluginManager
 

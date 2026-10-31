@@ -15,8 +15,9 @@ then it is read.
 from __future__ import annotations
 
 import inspect
+from collections.abc import Iterable, Iterator
 from types import ModuleType
-from typing import Any, Iterable, Iterator
+from typing import Any
 
 from netforge.core.exceptions import OperationNotFoundError
 from netforge.core.logging import get_logger

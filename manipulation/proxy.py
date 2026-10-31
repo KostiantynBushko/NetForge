@@ -100,7 +100,7 @@ class TcpProxy:
                 asyncio.open_connection(self.upstream_host, self.upstream_port),
                 timeout=self.timeout,
             )
-        except (OSError, asyncio.TimeoutError) as exc:
+        except (TimeoutError, OSError) as exc:
             self.stats.errors.append(f"the upstream could not be reached: {exc}")
             writer.close()
             return

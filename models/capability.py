@@ -41,7 +41,7 @@ class CapabilityCategory(StrEnum):
         return _DESCRIPTIONS[self]
 
     @classmethod
-    def parse(cls, value: "str | CapabilityCategory") -> "CapabilityCategory":
+    def parse(cls, value: str | CapabilityCategory) -> CapabilityCategory:
         """Coerce ``value`` into a :class:`CapabilityCategory`."""
         if isinstance(value, cls):
             return value

@@ -16,9 +16,10 @@ entered.
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator, Mapping
+from typing import Any
 
 from netforge.core.config import NetForgeConfig
 from netforge.core.exceptions import RiskPolicyError

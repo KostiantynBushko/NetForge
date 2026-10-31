@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from netforge.connectivity.base import Connection, ConnectionResult, ConnectionState
 from netforge.connectivity.http import HttpConnection, HttpRequestOperation
-from netforge.connectivity.tcp import TcpConnectOperation, TcpConnection
+from netforge.connectivity.tcp import TcpConnection, TcpConnectOperation
 from netforge.connectivity.udp import UdpConnection, UdpProbeOperation
 from netforge.connectivity.websocket import WebSocketConnection
 

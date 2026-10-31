@@ -144,7 +144,7 @@ class CaptureSession:
         self.process.send_signal(signal.SIGINT)
         try:
             return_code = await asyncio.wait_for(self.process.wait(), timeout=10.0)
-        except asyncio.TimeoutError:  # pragma: no cover - the tool ignored the signal
+        except TimeoutError:  # pragma: no cover - the tool ignored the signal
             self.process.kill()
             return_code = await self.process.wait()
         if self.stderr_task is not None:

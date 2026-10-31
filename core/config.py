@@ -75,8 +75,8 @@ class NetForgeConfig(NetForgeModel):
         cls,
         env: dict[str, str] | None = None,
         *,
-        base: "NetForgeConfig | None" = None,
-    ) -> "NetForgeConfig":
+        base: NetForgeConfig | None = None,
+    ) -> NetForgeConfig:
         """Build a configuration from the environment.
 
         ``base`` supplies the values that are not overridden by the
@@ -111,7 +111,7 @@ class NetForgeConfig(NetForgeModel):
         return cls(**values)
 
     @classmethod
-    def from_file(cls, path: str | Path, *, base: "NetForgeConfig | None" = None) -> "NetForgeConfig":
+    def from_file(cls, path: str | Path, *, base: NetForgeConfig | None = None) -> NetForgeConfig:
         """Build a configuration from a JSON file."""
         path = Path(path).expanduser()
         if not path.is_file():
@@ -129,7 +129,7 @@ class NetForgeConfig(NetForgeModel):
             raise ConfigurationError(f"invalid configuration in {path}: {exc}") from exc
 
     @classmethod
-    def load(cls, path: str | Path | None = None, *, env: dict[str, str] | None = None) -> "NetForgeConfig":
+    def load(cls, path: str | Path | None = None, *, env: dict[str, str] | None = None) -> NetForgeConfig:
         """Load the configuration from an optional file and the environment.
 
         The environment wins over the file, because that is the layer an

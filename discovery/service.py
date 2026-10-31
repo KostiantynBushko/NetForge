@@ -132,13 +132,13 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
                         asyncio.open_connection(request.host, port),
                         timeout=timeout,
                     )
-                except (OSError, asyncio.TimeoutError):
+                except (TimeoutError, OSError):
                     return port, False, None
                 elapsed = (time.perf_counter() - started) * 1000.0
                 writer.close()
                 try:
                     await writer.wait_closed()
-                except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+                except (TimeoutError, OSError):  # pragma: no cover - best effort
                     pass
                 return port, True, elapsed
 

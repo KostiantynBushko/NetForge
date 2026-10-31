@@ -128,7 +128,7 @@ class RestAdapter(Adapter):
 
 def build_app(registry: OperationRegistry | None = None, *, max_risk: int = 4) -> Any:
     """Build the FastAPI application of the REST adapter."""
-    fastapi = _load_fastapi()
+    _load_fastapi()
     from fastapi import FastAPI, HTTPException
     from fastapi.responses import JSONResponse
 

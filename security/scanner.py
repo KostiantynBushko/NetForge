@@ -102,7 +102,7 @@ async def scan_port(host: str, port: int, *, timeout: float = 2.0) -> ScanResult
         )
     except ConnectionRefusedError:
         return ScanResult(port=port, state="closed", service=_service_name(port))
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return ScanResult(port=port, state="filtered", service=_service_name(port))
     except OSError:
         return ScanResult(port=port, state="filtered", service=_service_name(port))
@@ -112,7 +112,7 @@ async def scan_port(host: str, port: int, *, timeout: float = 2.0) -> ScanResult
         writer.close()
         try:
             await writer.wait_closed()
-        except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+        except (TimeoutError, OSError):  # pragma: no cover - best effort
             pass
     return ScanResult(port=port, state="open", latency_ms=latency, service=_service_name(port))
 

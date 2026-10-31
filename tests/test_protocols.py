@@ -10,15 +10,15 @@ import struct
 
 import pytest
 
+from netforge.protocols.base import ProtocolError
 from netforge.protocols.modbus import (
-    READ_COILS,
     READ_HOLDING_REGISTERS,
     ModbusTcpClient,
-    ModbusTcpOperation,
 )
 from netforge.protocols.mqtt import MqttTopicFilter
 from netforge.protocols.opcua import parse_endpoint
 from netforge.protocols.snmp import (
+    SNMP_ERRORS,
     decode_oid,
     encode_get_request,
     encode_oid,
@@ -64,15 +64,38 @@ class TestSnmpGet:
         body = bytes([0x02, 0x01, 0x01]) + bytes([0x04, 0x06]) + b"public" + pdu
         message = bytes([0x30, len(body)]) + body
 
-        version, community, var_binds = parse_get_response(message)
+        version, community, error_status, var_binds = parse_get_response(message)
         assert version == 1
         assert community == "public"
+        assert error_status == 0
         assert len(var_binds) == 1
         assert var_binds[0].oid == "1.3.6.1.2.1.1.1.0"
         assert var_binds[0].text == "Linux"
 
+    def test_the_error_status_of_the_agent_is_kept(self):
+        # The same response, but the agent refused to answer: the error
+        # status is 2, which is noSuchName.
+        value = b"Linux"
+        varbind = bytes([0x30, 17]) + bytes([0x06, 0x08]) + bytes(
+            [0x2B, 0x06, 0x01, 0x02, 0x01, 0x01, 0x01, 0x00]
+        ) + bytes([0x04, len(value)]) + value
+        varbinds = bytes([0x30, len(varbind)]) + varbind
+        pdu_body = (
+            bytes([0x02, 0x01, 0x07])  # request-id
+            + bytes([0x02, 0x01, 0x02])  # error-status: noSuchName
+            + bytes([0x02, 0x01, 0x00])  # error-index
+            + varbinds
+        )
+        pdu = bytes([0xA2, len(pdu_body)]) + pdu_body
+        body = bytes([0x02, 0x01, 0x01]) + bytes([0x04, 0x06]) + b"public" + pdu
+        message = bytes([0x30, len(body)]) + body
+
+        _version, _community, error_status, _var_binds = parse_get_response(message)
+        assert error_status == 2
+        assert SNMP_ERRORS[error_status] == "noSuchName"
+
     def test_a_truncated_response_is_refused(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ProtocolError):
             parse_get_response(bytes([0x30, 0x10, 0x02]))
 
 
@@ -90,7 +113,7 @@ class TestModbus:
         async def handler(reader, writer):
             header = await reader.readexactly(7)
             _transaction, _protocol, length, _unit = struct.unpack("!HHHB", header)
-            body = await reader.readexactly(length - 1)
+            await reader.readexactly(length - 1)
             payload = struct.pack("!HH", 0x0100, 0x0200)
             response = (
                 bytes([READ_HOLDING_REGISTERS, 0x04])

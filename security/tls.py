@@ -120,7 +120,7 @@ async def inspect_tls(
     except (ssl.SSLError, ssl.CertificateError) as exc:
         report.error = str(exc)
         return report
-    except (OSError, asyncio.TimeoutError) as exc:
+    except (TimeoutError, OSError) as exc:
         report.error = str(exc)
         return report
 
@@ -139,7 +139,7 @@ async def inspect_tls(
         writer.close()
         try:
             await writer.wait_closed()
-        except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+        except (TimeoutError, OSError):  # pragma: no cover - best effort
             pass
 
     return report

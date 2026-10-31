@@ -37,7 +37,8 @@ import argparse
 import asyncio
 import json
 import sys
-from typing import Any, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 from netforge.adapters.base import Adapter, AdapterError
 from netforge.adapters.parameters import (

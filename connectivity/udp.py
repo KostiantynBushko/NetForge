@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+
 from pydantic import Field
 
 from netforge.connectivity.base import Connection, ConnectionState
@@ -31,7 +32,7 @@ _logger = get_logger("connectivity.udp")
 
 
 class _DatagramProtocol(asyncio.DatagramProtocol):
-    def __init__(self, future: "asyncio.Future[bytes]") -> None:
+    def __init__(self, future: asyncio.Future[bytes]) -> None:
         self._future = future
 
     def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
@@ -164,7 +165,7 @@ class UdpProbeOperation(Operation[UdpProbeRequest, UdpProbeResponse]):
             await connection.connect()
             await connection.send(request.payload.encode("utf-8"))
             data = await connection.receive(timeout=request.timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return UdpProbeResponse(
                 operation=self.name,
                 risk_level=self.risk_level.label,

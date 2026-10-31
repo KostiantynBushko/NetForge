@@ -10,9 +10,9 @@ from __future__ import annotations
 from netforge.analysis.flow import (
     Flow,
     FlowAnalysisOperation,
-    FlowAnalyzer,
     FlowAnalysisRequest,
     FlowAnalysisResponse,
+    FlowAnalyzer,
     Packet,
     PcapDecoder,
     decode_packet,

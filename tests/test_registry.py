@@ -9,7 +9,6 @@ from netforge.core.operation import Operation
 from netforge.models.base import RequestModel, ResponseModel
 from netforge.models.capability import CapabilityCategory
 from netforge.models.risk import RiskLevel
-from netforge.registry.registry import OperationRegistry
 
 
 class _Request(RequestModel):

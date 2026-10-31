@@ -73,7 +73,7 @@ class Connection(ABC):
     async def close(self) -> None:
         """Close the connection.  Must be safe to call more than once."""
 
-    async def __aenter__(self) -> "Connection":
+    async def __aenter__(self) -> Connection:
         await self.connect()
         return self
 

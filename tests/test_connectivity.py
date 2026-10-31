@@ -9,7 +9,7 @@ import struct
 
 import pytest
 
-from netforge.connectivity.tcp import TcpConnectOperation, TcpConnection
+from netforge.connectivity.tcp import TcpConnection
 from netforge.connectivity.websocket import WebSocketConnection, WebSocketOpcode, _encode_frame
 
 _GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -120,7 +120,7 @@ class TestWebSocketHandshake:
             # Read one masked client frame and answer with an unmasked text frame.
             header = await reader.readexactly(2)
             length = header[1] & 0x7F
-            mask = await reader.readexactly(4)
+            await reader.readexactly(4)
             await reader.readexactly(length)
             writer.write(bytes([0x81, 0x05]) + b"hello")
             await writer.drain()

@@ -22,9 +22,10 @@ from __future__ import annotations
 
 import importlib.util
 import sys
+from collections.abc import Iterable
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Iterable
+from typing import Any
 
 from netforge.core.logging import get_logger
 from netforge.plugins.base import Plugin

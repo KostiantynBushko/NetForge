@@ -8,6 +8,7 @@ operation itself is never run, because the suite is offline.
 from __future__ import annotations
 
 import pytest
+
 from netforge.adapters.parameters import (
     ParameterError,
     the_flags,

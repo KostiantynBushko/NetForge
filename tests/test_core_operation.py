@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 from netforge.core.context import ExecutionContext
 from netforge.core.exceptions import RiskPolicyError
@@ -70,7 +70,7 @@ class TestOperationContract:
         assert response.doubled == 42
 
     def test_run_rejects_an_unknown_field(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             DemoOperation().request_model(value=1, nonsense=2)
 
     def test_run_request_accepts_a_dictionary(self):
@@ -111,7 +111,7 @@ class TestOperationContract:
 
 class TestRequestValidation:
     def test_a_typo_in_a_field_name_is_an_error(self):
-        with pytest.raises(Exception):
+        with pytest.raises(ValidationError):
             DemoRequest(valve=1)
 
     def test_assignment_is_revalidated(self):

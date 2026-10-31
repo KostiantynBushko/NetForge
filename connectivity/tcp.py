@@ -50,7 +50,7 @@ class TcpConnection(Connection):
                 asyncio.open_connection(self.host, self.port),
                 timeout=self.timeout,
             )
-        except (OSError, asyncio.TimeoutError) as exc:
+        except (TimeoutError, OSError) as exc:
             self._mark_failed(exc)
             raise
         self.state = ConnectionState.CONNECTED
@@ -63,7 +63,7 @@ class TcpConnection(Connection):
             writer.close()
             try:
                 await writer.wait_closed()
-            except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+            except (TimeoutError, OSError):  # pragma: no cover - best effort
                 pass
         self.state = ConnectionState.CLOSED
 
@@ -132,7 +132,7 @@ class TcpConnectOperation(Operation[TcpConnectRequest, TcpConnectResponse]):
         started = time.perf_counter()
         try:
             await connection.connect()
-        except (OSError, asyncio.TimeoutError, ConnectionError) as exc:
+        except (TimeoutError, OSError, ConnectionError) as exc:
             latency = (time.perf_counter() - started) * 1000.0
             return TcpConnectResponse(
                 operation=self.name,

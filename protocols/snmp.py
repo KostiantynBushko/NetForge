@@ -219,10 +219,12 @@ class SnmpVarBind:
             return None
 
 
-def parse_get_response(data: bytes) -> tuple[int, str, list[SnmpVarBind]]:
+def parse_get_response(data: bytes) -> tuple[int, str, int, list[SnmpVarBind]]:
     """Parse an SNMP response.
 
-    Returns ``(error_status, error_name, var_binds)``.
+    Returns ``(version, community, error_status, var_binds)``.  The error
+    status is the one the agent reported: zero is ``noError``, and
+    anything else names a failure the agent refused to answer.
     """
     tag, content, _ = _read_tlv(data, 0)
     if tag != 0x30:
@@ -265,7 +267,7 @@ def parse_get_response(data: bytes) -> tuple[int, str, list[SnmpVarBind]]:
             )
         )
 
-    return version, community, var_binds
+    return version, community, error_status, var_binds
 
 
 def _value_type_name(value: bytes) -> str:
@@ -324,10 +326,10 @@ class SnmpClient:
             writer.close()
             try:
                 await writer.wait_closed()
-            except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+            except (TimeoutError, OSError):  # pragma: no cover - best effort
                 pass
 
-    async def get(self, oid: str) -> tuple[int, str, list[SnmpVarBind]]:
+    async def get(self, oid: str) -> tuple[int, str, int, list[SnmpVarBind]]:
         """Perform a GET for one OID and return the parsed response."""
         if self._writer is None:
             raise ProtocolError("the SNMP session is not open")
@@ -395,8 +397,8 @@ class SnmpGetOperation(Operation[SnmpGetRequest, SnmpGetResponse]):
         started = time.perf_counter()
         try:
             await client.connect()
-            _version, _community, var_binds = await client.get(request.oid)
-        except (OSError, asyncio.TimeoutError, ProtocolError) as exc:
+            _version, _community, error_status, var_binds = await client.get(request.oid)
+        except (TimeoutError, OSError, ProtocolError) as exc:
             return SnmpGetResponse(
                 operation=self.name,
                 risk_level=self.risk_level.label,
@@ -426,7 +428,7 @@ class SnmpGetOperation(Operation[SnmpGetRequest, SnmpGetResponse]):
             duration_ms=(time.perf_counter() - started) * 1000.0,
             host=request.host,
             oid=request.oid,
-            error_status=0,
-            error_name=SNMP_ERRORS.get(0, "noError"),
+            error_status=error_status,
+            error_name=SNMP_ERRORS.get(error_status, "unknownError"),
             values=values,
         )

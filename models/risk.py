@@ -48,7 +48,7 @@ class RiskLevel(IntEnum):
         return _DESCRIPTIONS[self]
 
     @classmethod
-    def parse(cls, value: "str | int | RiskLevel") -> "RiskLevel":
+    def parse(cls, value: str | int | RiskLevel) -> RiskLevel:
         """Coerce ``value`` into a :class:`RiskLevel`.
 
         Accepts the member itself, its integer value, and the spellings an
@@ -75,7 +75,7 @@ class RiskLevel(IntEnum):
         except KeyError as exc:
             raise ValueError(f"unknown risk level: {value!r}") from exc
 
-    def allows(self, other: "RiskLevel") -> bool:
+    def allows(self, other: RiskLevel) -> bool:
         """Return ``True`` when ``other`` is at or below this level."""
         return int(other) <= int(self)
 

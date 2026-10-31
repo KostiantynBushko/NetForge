@@ -17,8 +17,9 @@ import asyncio
 import os
 import shutil
 import time
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Mapping, Protocol, Sequence
+from typing import Protocol
 
 from netforge.core.exceptions import ConfigurationError
 from netforge.core.logging import get_logger
@@ -49,7 +50,7 @@ class CommandResult:
         """Return the command as a copy-pasteable shell string."""
         return " ".join(_quote(part) for part in self.argv)
 
-    def check(self) -> "CommandResult":
+    def check(self) -> CommandResult:
         """Raise :class:`RuntimeError` when the command failed."""
         if not self.ok:
             detail = (self.stderr or self.stdout).strip()

@@ -64,7 +64,7 @@ class ProtocolAdapter(ABC):
     async def exchange(self, payload: bytes) -> ProtocolResponse:
         """Send ``payload`` and return the decoded reply."""
 
-    async def __aenter__(self) -> "ProtocolAdapter":
+    async def __aenter__(self) -> ProtocolAdapter:
         await self.connect()
         return self
 

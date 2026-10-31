@@ -18,6 +18,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
+
 from pydantic import Field
 
 from netforge.core.context import ExecutionContext
@@ -123,7 +124,7 @@ class HttpConnection:
 
         try:
             status, reason, response_headers, body = await asyncio.to_thread(_do)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             raise TimeoutError(f"the request to {url} timed out after {budget}s") from None
         except urllib.error.URLError as exc:
             raise ConnectionError(f"the request to {url} failed: {exc.reason}") from exc

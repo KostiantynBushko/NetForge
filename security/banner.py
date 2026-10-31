@@ -59,23 +59,23 @@ async def grab_banner(
         )
         try:
             data = await asyncio.wait_for(reader.read(read_size), timeout=timeout)
-        except asyncio.TimeoutError:
+        except TimeoutError:
             data = b""
             if probe:
                 writer.write(probe)
                 await writer.drain()
                 try:
                     data = await asyncio.wait_for(reader.read(read_size), timeout=timeout)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     data = b""
-    except (OSError, asyncio.TimeoutError):
+    except (TimeoutError, OSError):
         return None, None
     finally:
         if writer is not None:
             writer.close()
             try:
                 await writer.wait_closed()
-            except (OSError, asyncio.TimeoutError):  # pragma: no cover - best effort
+            except (TimeoutError, OSError):  # pragma: no cover - best effort
                 pass
 
     if not data:

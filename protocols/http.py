@@ -9,7 +9,6 @@ implementation deliberately: there is one HTTP client in NetForge, not two.
 from __future__ import annotations
 
 import time
-from urllib.parse import urlparse
 
 from pydantic import Field
 
@@ -124,7 +123,6 @@ class HttpProtocolOperation(Operation[HttpProtocolRequest, HttpProtocolResponse]
         self, request: HttpProtocolRequest, context: ExecutionContext
     ) -> HttpProtocolResponse:
         """Perform the request."""
-        parsed = urlparse(request.url)
         client = HttpConnection(
             timeout=request.timeout if request.timeout is not None else context.timeout,
             verify_tls=context.config.verify_tls,
