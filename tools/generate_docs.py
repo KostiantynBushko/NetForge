@@ -28,13 +28,14 @@ it changes nothing.
 from __future__ import annotations
 
 import argparse
+import enum
 import importlib
 import inspect
 import json
 import sys
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -347,6 +348,14 @@ def the_signature_of(member: Any) -> str:
     if inspect.isclass(member):
         if hasattr(member, "model_fields"):
             return the_model_fields_of(member)
+        if issubclass(member, enum.Enum) or issubclass(member, Protocol):
+            # An enumeration is made of its members and a protocol of its
+            # methods; neither is built by a constructor that a reader
+            # cares about.  The signature of ``Enum.__init__`` changed
+            # between the versions of Python, and the documentation must
+            # not follow it: the same code has to produce the same page
+            # everywhere.
+            return "()"
         if member.__init__ is object.__init__:
             return "()"
         try:
