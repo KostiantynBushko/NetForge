@@ -11,10 +11,11 @@ give, and not a table hard-coded in NetForge.
 from __future__ import annotations
 
 import asyncio
+import shlex
 import socket
 import time
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
 from netforge.core.context import ExecutionContext
 from netforge.core.logging import get_logger
@@ -69,6 +70,37 @@ class ServiceDiscoveryRequest(RequestModel):
         default=Aggressiveness.NORMAL,
         description="How hard the scan pushes, and how visible it is on the target.",
     )
+    nmap_command: str | None = Field(
+        default=None,
+        description=(
+            "An nmap command line to run instead of the one NetForge builds. "
+            "It must run nmap, and it must scan the host of the request."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _the_command_is_sane(self) -> ServiceDiscoveryRequest:
+        """Check a command that was written by hand.
+
+        The check is here, and not in the operation, so that every
+        adapter refuses the same command the same way -- and refuses it
+        before anything is run.
+        """
+        if self.nmap_command is None:
+            return self
+
+        if "engine" in self.model_fields_set and self.engine is ScanEngine.NATIVE:
+            raise ValueError(
+                "the nmap command needs the nmap engine, but the engine was "
+                "set to the native scanner"
+            )
+        if self.engine is ScanEngine.NATIVE:
+            # The command says which engine to run, and the caller did
+            # not say otherwise.
+            self.engine = ScanEngine.NMAP
+
+        nmap.the_custom_arguments(self.nmap_command, self.host)
+        return self
 
 
 class ServiceDiscoveryResponse(ResponseModel):
@@ -81,6 +113,9 @@ class ServiceDiscoveryResponse(ResponseModel):
     engine: str = Field(default="native", description="The scanner that ran the scan.")
     aggressiveness: str = Field(
         default="normal", description="The level the scan was run at."
+    )
+    command: str | None = Field(
+        default=None, description="The command that was run, when one was."
     )
 
 
@@ -95,7 +130,9 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
         "Probes a set of TCP ports on a host and reports which of them are open, together "
         "with the service name from the system's own services database. The probe opens "
         "and closes a connection per port, which is observable on the wire, so the "
-        "operation is declared at the observability level."
+        "operation is declared at the observability level. The nmap engine can also be "
+        "given a command of the caller's own; such a command can do anything nmap can "
+        "do, and is held to the system modification level until the caller allows it."
     )
     tags = frozenset({"service", "ports", "enumeration"})
 
@@ -106,6 +143,13 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
         self, request: ServiceDiscoveryRequest, context: ExecutionContext
     ) -> ServiceDiscoveryResponse:
         """Probe the ports."""
+        if request.nmap_command is not None:
+            # A command that was written by hand can do anything nmap can
+            # do: run a script, write a file, reach a whole network.  It
+            # is not the risk of this operation any more, so it is held
+            # to the highest level until the caller allows it.
+            context.check_risk(self.name, RiskLevel.SYSTEM_MODIFICATION)
+
         if request.engine is ScanEngine.NMAP:
             return await self._with_nmap(request, context)
         return await self._with_the_native_scanner(request, context)
@@ -189,17 +233,27 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
             response.warnings.append(
                 "nmap is not installed; the native scanner was used instead"
             )
-            response.engine = request.engine.value
+            # The engine that ran is the native one, whatever was asked
+            # for: the answer must not name an engine that did not run.
+            response.engine = ScanEngine.NATIVE.value
             response.aggressiveness = request.aggressiveness.value
             return response
 
-        arguments = nmap.the_arguments(
-            host=request.host,
-            ports=",".join(str(port) for port in ports),
-            level=request.aggressiveness,
-            timeout=timeout,
-            root=root,
-        )
+        if request.nmap_command is not None:
+            arguments, remarks = nmap.the_custom_arguments(request.nmap_command, request.host)
+            warnings.extend(remarks)
+        else:
+            arguments = nmap.the_arguments(
+                host=request.host,
+                ports=",".join(str(port) for port in ports),
+                level=request.aggressiveness,
+                timeout=timeout,
+                root=root,
+            )
+        # The command is rendered here, and not read back from the
+        # runner, so that the answer names the command that was asked
+        # for whatever the runner is.
+        command = shlex.join(arguments)
         result = await context.runner().run(arguments, timeout=context.timeout)
         if not result.ok:
             detail = (result.stderr or result.stdout).strip()
@@ -213,6 +267,7 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
                 scanned=0,
                 engine=request.engine.value,
                 aggressiveness=request.aggressiveness.value,
+                command=command,
                 warnings=[f"nmap exited with the status {result.returncode}: {detail}"],
             )
 
@@ -229,6 +284,7 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
                 scanned=0,
                 engine=request.engine.value,
                 aggressiveness=request.aggressiveness.value,
+                command=command,
                 warnings=[str(exc)],
             )
 
@@ -243,5 +299,6 @@ class ServiceDiscoveryOperation(Operation[ServiceDiscoveryRequest, ServiceDiscov
             scanned=found.scanned,
             engine=request.engine.value,
             aggressiveness=request.aggressiveness.value,
+            command=command,
             warnings=warnings,
         )

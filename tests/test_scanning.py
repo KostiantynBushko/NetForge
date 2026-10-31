@@ -10,9 +10,12 @@ from __future__ import annotations
 import asyncio
 
 import pytest
+from pydantic import ValidationError
 
 from netforge.core.context import ExecutionContext
 from netforge.discovery import nmap
+from netforge.discovery.service import ServiceDiscoveryRequest
+from netforge.models.risk import RiskLevel
 from netforge.models.scanning import (
     PROFILES,
     Aggressiveness,
@@ -187,6 +190,151 @@ class TestTheNmapArguments:
         assert nmap.the_warnings(Aggressiveness.NORMAL, root=False) == []
 
 
+class TestTheCustomNmapCommand:
+    """A command the caller wrote, instead of the one NetForge builds."""
+
+    def the_arguments(self, command, host="10.0.0.1"):
+        return nmap.the_custom_arguments(command, host)
+
+    def test_the_command_is_split(self):
+        arguments, _warnings = self.the_arguments("nmap -sV -p- 10.0.0.1")
+        assert arguments[:4] == ["nmap", "-sV", "-p-", "10.0.0.1"]
+
+    def test_a_quoted_argument_stays_one_argument(self):
+        arguments, _warnings = self.the_arguments('nmap --script "a b" 10.0.0.1')
+        assert "--script" in arguments
+        assert "a b" in arguments
+
+    def test_the_program_must_be_nmap(self):
+        with pytest.raises(ValueError, match="must run nmap"):
+            self.the_arguments("ls -la 10.0.0.1")
+
+    def test_a_full_path_to_nmap_is_allowed(self):
+        arguments, _warnings = self.the_arguments("/usr/bin/nmap -sV 10.0.0.1")
+        assert arguments[0] == "/usr/bin/nmap"
+
+    def test_the_command_must_scan_the_host_of_the_request(self):
+        with pytest.raises(ValueError, match="does not scan the host"):
+            self.the_arguments("nmap -sV 10.0.0.2")
+
+    def test_an_empty_command_is_refused(self):
+        with pytest.raises(ValueError, match="empty"):
+            self.the_arguments("   ")
+
+    def test_a_command_that_cannot_be_split_is_refused(self):
+        with pytest.raises(ValueError, match="cannot be split"):
+            self.the_arguments('nmap --script "unbalanced')
+
+    def test_the_xml_output_is_added_when_it_is_missing(self):
+        arguments, warnings = self.the_arguments("nmap -sV 10.0.0.1")
+        assert arguments[arguments.index("-oX") + 1] == "-"
+        assert warnings and "XML output" in warnings[0]
+
+    def test_the_xml_output_is_not_added_twice(self):
+        arguments, warnings = self.the_arguments("nmap -sV -oX - 10.0.0.1")
+        assert arguments.count("-oX") == 1
+        assert warnings == []
+
+
+class TestTheCustomCommandInTheOperation:
+    """The operation, when the caller writes the nmap command."""
+
+    async def the_operation(self, registry, fake_runner, monkeypatch):
+        monkeypatch.setattr("netforge.discovery.service.which", lambda program: "/usr/bin/nmap")
+        from tests.conftest import result
+
+        fake_runner.default = result(SAMPLE_XML)
+        return registry.create("discovery.service.enumerate")
+
+    async def test_the_command_that_was_written_is_the_one_that_runs(
+        self, registry, fake_runner, monkeypatch
+    ):
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(command_runner=fake_runner)
+        await operation.run_request(
+            {"host": "10.0.0.1", "nmap_command": "nmap -sV -p- 10.0.0.1"}, context
+        )
+        assert fake_runner.calls[0][:4] == ["nmap", "-sV", "-p-", "10.0.0.1"]
+
+    async def test_the_answer_names_the_command(self, registry, fake_runner, monkeypatch):
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(command_runner=fake_runner)
+        response = await operation.run_request(
+            {"host": "10.0.0.1", "nmap_command": "nmap -sV -p- 10.0.0.1"}, context
+        )
+        assert response.command.startswith("nmap -sV -p- 10.0.0.1")
+        assert response.engine == "nmap"
+
+    async def test_the_result_is_read_from_the_output_of_the_command(
+        self, registry, fake_runner, monkeypatch
+    ):
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(command_runner=fake_runner)
+        response = await operation.run_request(
+            {"host": "10.0.0.1", "nmap_command": "nmap -sV 10.0.0.1"}, context
+        )
+        assert response.open_ports[0]["version"] == "OpenSSH 10.2p1"
+
+    async def test_the_command_is_refused_above_the_ceiling(
+        self, registry, fake_runner, monkeypatch
+    ):
+        from netforge.core.exceptions import RiskPolicyError
+
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(
+            command_runner=fake_runner, max_risk=RiskLevel.OBSERVABILITY
+        )
+        with pytest.raises(RiskPolicyError):
+            await operation.run_request(
+                {"host": "10.0.0.1", "nmap_command": "nmap -sV 10.0.0.1"}, context
+            )
+
+    async def test_the_command_is_allowed_at_the_top_level(
+        self, registry, fake_runner, monkeypatch
+    ):
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(
+            command_runner=fake_runner, max_risk=RiskLevel.SYSTEM_MODIFICATION
+        )
+        response = await operation.run_request(
+            {"host": "10.0.0.1", "nmap_command": "nmap -sV 10.0.0.1"}, context
+        )
+        assert response.engine == "nmap"
+
+    async def test_the_built_command_is_untouched_by_the_field(
+        self, registry, fake_runner, monkeypatch
+    ):
+        operation = await self.the_operation(registry, fake_runner, monkeypatch)
+        context = ExecutionContext(command_runner=fake_runner)
+        await operation.run_request(
+            {"host": "10.0.0.1", "engine": "nmap", "ports": [22]}, context
+        )
+        assert fake_runner.calls[0][0] == "nmap"
+        assert "-p" in fake_runner.calls[0]
+
+
+class TestTheCustomCommandIsChecked:
+    """The command is refused before anything is run."""
+
+    def test_the_command_needs_the_nmap_engine(self):
+        with pytest.raises(ValidationError, match="needs the nmap engine"):
+            ServiceDiscoveryRequest(
+                host="10.0.0.1", engine="native", nmap_command="nmap -sV 10.0.0.1"
+            )
+
+    def test_the_command_brings_the_nmap_engine_with_it(self):
+        request = ServiceDiscoveryRequest(host="10.0.0.1", nmap_command="nmap -sV 10.0.0.1")
+        assert request.engine is ScanEngine.NMAP
+
+    def test_a_foreign_program_is_refused(self):
+        with pytest.raises(ValidationError, match="must run nmap"):
+            ServiceDiscoveryRequest(host="10.0.0.1", nmap_command="ls -la 10.0.0.1")
+
+    def test_another_host_is_refused(self):
+        with pytest.raises(ValidationError, match="does not scan the host"):
+            ServiceDiscoveryRequest(host="10.0.0.1", nmap_command="nmap -sV 10.0.0.2")
+
+
 class TestTheNmapOutput:
     """The XML that nmap writes."""
 
@@ -290,6 +438,8 @@ class TestTheServiceEnumeration:
             )
             assert any("nmap is not installed" in warning for warning in response.warnings)
             assert port in [entry["port"] for entry in response.open_ports]
+            # The answer must not name an engine that did not run.
+            assert response.engine == "native"
         finally:
             server.close()
             await server.wait_closed()

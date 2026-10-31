@@ -11,7 +11,7 @@
 
 ## What it does
 
-Probes a set of TCP ports on a host and reports which of them are open, together with the service name from the system's own services database. The probe opens and closes a connection per port, which is observable on the wire, so the operation is declared at the observability level.
+Probes a set of TCP ports on a host and reports which of them are open, together with the service name from the system's own services database. The probe opens and closes a connection per port, which is observable on the wire, so the operation is declared at the observability level. The nmap engine can also be given a command of the caller's own; such a command can do anything nmap can do, and is held to the system modification level until the caller allows it.
 
 ## The request
 
@@ -23,6 +23,7 @@ Probes a set of TCP ports on a host and reports which of them are open, together
 | `concurrency` | integer | — | How many probes to run at once. The level decides when it is not given. |
 | `engine` | "native" or "nmap" | `"native"` | The scanner that runs the scan: the native one, or nmap. |
 | `aggressiveness` | "paranoid" or "stealth" or "polite" or "normal" or "aggressive" | `"normal"` | How hard the scan pushes, and how visible it is on the target. |
+| `nmap_command` | string | — | An nmap command line to run instead of the one NetForge builds. It must run nmap, and it must scan the host of the request. |
 
 ## The response
 
@@ -38,6 +39,7 @@ Probes a set of TCP ports on a host and reports which of them are open, together
 | `scanned` | integer | How many ports were probed. |
 | `engine` | string | The scanner that ran the scan. |
 | `aggressiveness` | string | The level the scan was run at. |
+| `command` | string | The command that was run, when one was. |
 
 ## Using it
 

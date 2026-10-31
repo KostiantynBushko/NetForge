@@ -46,6 +46,39 @@ native engine does the work and the response says so.
 netforge run discovery.service.enumerate --host 10.0.0.1 --engine nmap
 ```
 
+The nmap engine can also be given a command of your own, for the cases
+where the built-in one is not the command you want:
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 \
+  --nmap-command "nmap -sV -p- --script vuln 10.0.0.1"
+```
+
+The command is split the way a shell would split it, so a quoted
+argument stays one argument -- but it never reaches a shell: the
+arguments go to nmap as they are. Two things are required of it. It has
+to run nmap, because the field is not a way of running anything at all.
+And it has to scan the host of the request, so that the answer
+describes the scan that was actually made. The XML output on the
+standard output is added when the command does not ask for it, because
+that is where the result is read from; the answer says so when it does.
+
+A command of your own can do anything nmap can do: run a script, write
+a file, reach a whole network. It is therefore held to the highest risk
+level until the caller allows it, and an operator who set a lower
+ceiling is refused it:
+
+```bash
+netforge --max-risk observability run discovery.service.enumerate \
+  --host 10.0.0.1 --nmap-command "nmap -sV 10.0.0.1"
+```
+
+```text
+RiskPolicyError: operation 'discovery.service.enumerate' is declared at
+risk level System Modification, which is above the permitted ceiling
+Observability
+```
+
 Both engines take the **aggressiveness** of the scan: how hard it
 pushes, and how visible it is on the target.
 

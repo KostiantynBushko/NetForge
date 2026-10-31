@@ -18,7 +18,9 @@ is what makes the engine testable without nmap, and without a network.
 from __future__ import annotations
 
 import os
+import shlex
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
 
@@ -28,6 +30,7 @@ __all__ = [
     "NmapResult",
     "parse_nmap_xml",
     "the_arguments",
+    "the_custom_arguments",
     "the_warnings",
 ]
 
@@ -109,6 +112,53 @@ def the_arguments(
 
     arguments += ["--", host]
     return arguments
+
+
+def the_custom_arguments(command: str, host: str) -> tuple[list[str], list[str]]:
+    """Return the arguments of an nmap command the caller wrote, and the remarks.
+
+    The command is split the way a shell would split it -- so that a
+    quoted argument stays one argument -- but it never reaches a shell:
+    the arguments go to nmap as they are, and there is nothing in the
+    middle that could interpret them as syntax.
+
+    Two things are required of the command.  The program has to be nmap,
+    or the field would be a way of running anything at all.  And the
+    command has to scan the host of the request, or the answer would
+    describe a scan that was never made.
+
+    The XML output on the standard output is added when the command does
+    not ask for it, because that is where the result is read from.
+    """
+    try:
+        arguments = shlex.split(command)
+    except ValueError as exc:
+        raise ValueError(f"the nmap command cannot be split: {exc}") from exc
+
+    if not arguments:
+        raise ValueError("the nmap command is empty")
+
+    program = Path(arguments[0]).name.lower()
+    if program not in ("nmap", "nmap.exe"):
+        raise ValueError(f"the nmap command must run nmap, not {arguments[0]!r}")
+
+    if host not in arguments:
+        raise ValueError(
+            f"the nmap command does not scan the host of the request, {host!r}"
+        )
+
+    warnings: list[str] = []
+    asks_for_xml = "-oX" in arguments or any(
+        argument.startswith("-oX=") for argument in arguments
+    )
+    if not asks_for_xml:
+        arguments += ["-oX", "-"]
+        warnings.append(
+            "the XML output was added to the nmap command, so that the "
+            "result could be read"
+        )
+
+    return arguments, warnings
 
 
 def parse_nmap_xml(text: str) -> NmapResult:

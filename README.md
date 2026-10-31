@@ -182,6 +182,17 @@ Without nmap installed, the native scanner does the work and the
 response says so. The levels are described in
 [the discovery package](discovery/docs/README.md#the-engines-and-the-levels).
 
+The nmap engine can also be given a command of your own, when the
+built-in one is not the command you want:
+
+```bash
+netforge run discovery.service.enumerate --host 10.0.0.1 \
+  --nmap-command "nmap -sV -p- --script vuln 10.0.0.1"
+```
+
+A command of your own can do anything nmap can do, so it is held to the
+highest risk level until the caller allows it.
+
 ---
 
 ## The sentinel
