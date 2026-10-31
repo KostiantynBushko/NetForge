@@ -45,25 +45,68 @@ def _load_llama_index():
     return FunctionTool
 
 
+def _the_resolved(definition: dict[str, Any], definitions: dict[str, Any]) -> dict[str, Any]:
+    """Follow a reference into the definitions of the schema.
+
+    A property that is an enumeration, or a model of its own, is written
+    as a reference; the definition it points at carries its type and its
+    allowed values.
+    """
+    reference = definition.get("$ref")
+    if not reference:
+        return definition
+    target = definitions.get(reference.rsplit("/", 1)[-1], {})
+    return {**target, **{key: value for key, value in definition.items() if key != "$ref"}}
+
+
+def _the_type_of(resolved: dict[str, Any]) -> str:
+    """Return the JSON type of a property.
+
+    A property that may be null is described by a union, and a union is
+    not a type: the type of the branch that carries the value is the one
+    that matters.  A property that is a list keeps the type of its
+    items, and a property that is an enumeration is a string.
+    """
+    if "type" in resolved:
+        return resolved["type"]
+    for branch in resolved.get("anyOf", []) + resolved.get("oneOf", []):
+        if branch.get("type") != "null":
+            return branch.get("type", "string")
+    return "string"
+
+
 def tool_parameters(descriptor: Any) -> dict[str, Any]:
     """Return the tool parameters of an operation descriptor.
 
     The JSON Schema of the request model is translated into the flat
     ``{"name": {"description": ..., "type": ...}}`` mapping that the
     LlamaIndex and OpenAI function-calling APIs use.
+
+    The types are the ones the operation really has: a parameter that
+    may be null keeps the type of its other branch, a list keeps the
+    type of its items, an enumeration keeps the values it allows, and a
+    parameter that has a default says so.
     """
     schema = descriptor.request_schema or {}
     properties = schema.get("properties", {})
     required = set(schema.get("required", []))
+    definitions = schema.get("$defs", {})
 
     parameters: dict[str, Any] = {}
     for name, definition in properties.items():
+        resolved = _the_resolved(definition, definitions)
         entry: dict[str, Any] = {
-            "description": definition.get("description", ""),
-            "type": definition.get("type", "string"),
+            "description": resolved.get("description", ""),
+            "type": _the_type_of(resolved),
         }
         if name in required:
             entry["required"] = True
+        if "default" in resolved:
+            entry["default"] = resolved["default"]
+        if "enum" in resolved:
+            entry["enum"] = list(resolved["enum"])
+        if "items" in resolved:
+            entry["items"] = resolved["items"]
         parameters[name] = entry
     return parameters
 

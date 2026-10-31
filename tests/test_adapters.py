@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import json
+from typing import Any
 
 import pytest
 
@@ -266,6 +267,44 @@ class TestRestDependencies:
         assert caught.value.dependencies == ["fastapi", "uvicorn"]
 
 
+def _the_json_type(annotation: Any) -> str:
+    """Return the JSON type of a Pydantic field annotation.
+
+    The rule is the one the flat mapping follows: a union is reported as
+    the type of its first branch that carries a value, so an optional
+    field keeps the type of the value it may hold.
+    """
+    import enum
+    import types
+    import typing
+
+    origin = typing.get_origin(annotation)
+    if origin is typing.Union or origin is types.UnionType:
+        for branch in typing.get_args(annotation):
+            if branch is not type(None):
+                return _the_json_type(branch)
+        return "null"
+    if origin in (list, set, tuple, frozenset):
+        return "array"
+    if origin is dict:
+        return "object"
+    if isinstance(annotation, type) and issubclass(annotation, enum.Enum):
+        return "string"
+    if annotation is bool:
+        return "boolean"
+    if annotation is int:
+        return "integer"
+    if annotation is float:
+        return "number"
+    if annotation is str:
+        return "string"
+    if annotation is dict:
+        return "object"
+    if annotation is list:
+        return "array"
+    return "string"
+
+
 class TestToolParameters:
     def test_the_request_schema_becomes_the_tool_parameters(self, registry):
         descriptor = registry.get("discovery.ping")
@@ -273,6 +312,39 @@ class TestToolParameters:
         assert "host" in parameters
         assert parameters["host"]["type"] == "string"
         assert parameters["host"]["required"] is True
+
+    def test_a_parameter_that_may_be_null_keeps_the_type_of_its_value(self, registry):
+        parameters = tool_parameters(registry.get("discovery.ping"))
+        assert parameters["timeout"]["type"] == "number"
+
+    def test_a_list_keeps_the_type_of_its_items(self, registry):
+        parameters = tool_parameters(registry.get("discovery.service.enumerate"))
+        assert parameters["ports"]["type"] == "array"
+        assert parameters["ports"]["items"]["type"] == "integer"
+
+    def test_an_enumeration_keeps_the_values_it_allows(self, registry):
+        parameters = tool_parameters(registry.get("discovery.service.enumerate"))
+        assert parameters["engine"]["type"] == "string"
+        assert parameters["engine"]["enum"] == ["native", "nmap"]
+
+    def test_a_parameter_that_has_a_default_says_so(self, registry):
+        parameters = tool_parameters(registry.get("discovery.ping"))
+        assert parameters["count"]["default"] == 3
+
+    def test_every_parameter_reports_the_type_it_really_has(self, registry):
+        """The flat mapping must not lie about the types of the catalogue.
+
+        This is the test that would have caught the mapping calling a
+        timeout a string and a concurrency an integer.
+        """
+        for descriptor in registry:
+            operation = registry.get_operation(descriptor.name)
+            parameters = tool_parameters(descriptor)
+            for name, field in operation.request_model.model_fields.items():
+                assert parameters[name]["type"] == _the_json_type(field.annotation), (
+                    descriptor.name,
+                    name,
+                )
 
     def test_the_tool_description_names_the_risk_level(self, registry):
         descriptor = registry.get("configuration.restore")
