@@ -348,13 +348,17 @@ def the_signature_of(member: Any) -> str:
     if inspect.isclass(member):
         if hasattr(member, "model_fields"):
             return the_model_fields_of(member)
-        if issubclass(member, enum.Enum) or issubclass(member, Protocol):
+        if issubclass(member, enum.Enum) or Protocol in getattr(member, "__mro__", ()):
             # An enumeration is made of its members and a protocol of its
             # methods; neither is built by a constructor that a reader
             # cares about.  The signature of ``Enum.__init__`` changed
             # between the versions of Python, and the documentation must
             # not follow it: the same code has to produce the same page
             # everywhere.
+            #
+            # A protocol is recognised by its base classes and not by
+            # ``issubclass``: that answers "yes" for every class on
+            # Python 3.11.
             return "()"
         if member.__init__ is object.__init__:
             return "()"

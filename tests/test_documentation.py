@@ -289,6 +289,28 @@ class TestEveryLinkResolves:
 class TestTheGeneratorIsHonest:
     """The documentation must be what the generator writes."""
 
+    def test_the_signature_does_not_depend_on_the_version_of_python(self):
+        """The same class must be written the same way everywhere.
+
+        Python 3.11 and Python 3.12 answer differently when asked
+        whether a class is a protocol, and the signature of
+        ``Enum.__init__`` changed between 3.12 and 3.13.  The generator
+        must not follow either, or the same code produces a different
+        page depending on the interpreter that runs it.
+        """
+        sys.path.insert(0, str(ROOT / "tools"))
+        import generate_docs
+
+        from netforge.connectivity import TcpConnection
+        from netforge.models.risk import RiskLevel
+        from netforge.sentinel.engine import Rule
+
+        assert generate_docs.the_signature_of(TcpConnection) == (
+            "(host: str, port: int, *, timeout: float | None = 30.0)"
+        )
+        assert generate_docs.the_signature_of(RiskLevel) == "()"
+        assert generate_docs.the_signature_of(Rule) == "()"
+
     def test_the_generator_changes_nothing(self):
         sys.path.insert(0, str(ROOT / "tools"))
         import generate_docs
