@@ -1,5 +1,7 @@
 # NetForge
 
+[![CI](https://github.com/KostiantynBushko/NetForge/actions/workflows/ci.yml/badge.svg)](https://github.com/KostiantynBushko/NetForge/actions/workflows/ci.yml)
+
 > A modular network operations and security toolkit. One implementation of a
 > capability, available through Python, a command line, a REST API, MCP,
 > LlamaIndex function tools, LangChain tools and Pydantic AI tools.
@@ -371,6 +373,12 @@ The suite is offline: it needs neither the network, nor the system tools,
 nor root. The capabilities that shell out are driven through an injected
 command runner, and the ones that open sockets are driven against a local
 server the test itself starts.
+
+It runs on every push, over Python 3.11 to 3.14, with every extra
+installed -- the adapters that need them are part of the framework and
+are tested like the rest of it. The lint is checked there too, and so is
+the claim that the core needs nothing but Pydantic: the wheel is
+installed on its own, without the extras, and asked to answer.
 
 ---
 
