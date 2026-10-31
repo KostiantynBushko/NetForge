@@ -2,17 +2,26 @@
 
 from __future__ import annotations
 
+import importlib.metadata
 import json
 
 import pytest
 
 from netforge.adapters import rest
-from netforge.adapters.base import Adapter
 from netforge.adapters.cli import CliAdapter, build_parser, main
 from netforge.adapters.llamaindex import LlamaIndexAdapter, tool_parameters
 from netforge.adapters.mcp import McpAdapter, tool_description
 from netforge.adapters.rest import RestAdapter, serve_rest
 from netforge.core.exceptions import DependencyMissingError
+
+
+def _installed(distribution: str) -> bool:
+    """Return whether an optional distribution is installed."""
+    try:
+        importlib.metadata.distribution(distribution)
+    except importlib.metadata.PackageNotFoundError:
+        return False
+    return True
 
 
 class TestCli:
@@ -250,3 +259,138 @@ class TestToolParameters:
         description = tool_description(descriptor)
         assert "Risk level" in description
         assert "System Modification" in description
+
+
+class TestTheLlamaIndexTools:
+    """Every LlamaIndex tool must run the operation it is named after.
+
+    The builder used to close over a variable of its own loop, so every
+    tool it produced ran the *last* operation of the registry.  The tests
+    below are the ones that would have caught it.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _the_extra_is_installed(self):
+        if not _installed("llama-index-core"):
+            pytest.skip("llama-index-core is not installed")
+
+    @pytest.fixture
+    def tools(self, registry):
+        from netforge.adapters.llamaindex import build_tools
+
+        return {tool.metadata.name: tool for tool in build_tools(registry)}
+
+    def test_there_is_a_tool_for_every_operation(self, registry, tools):
+        assert set(tools) == set(registry.names())
+
+    def test_every_tool_carries_the_schema_of_its_own_operation(self, registry, tools):
+        for name, tool in tools.items():
+            expected = registry.get_operation(name).request_model
+            assert tool.metadata.fn_schema is expected, name
+
+    def test_a_tool_advertises_the_parameters_of_its_operation(self, tools):
+        schema = tools["discovery.ping"].metadata.fn_schema.model_json_schema()
+        assert "host" in schema["properties"]
+        assert "count" in schema["properties"]
+        assert schema["required"] == ["host"]
+
+    def test_a_tool_runs_the_operation_it_is_named_after(self, tools):
+        result = json.loads(tools["configuration.validate"].fn(content="{}"))
+        assert result["operation"] == "configuration.validate"
+
+    def test_two_tools_run_two_different_operations(self, tools):
+        first = json.loads(tools["configuration.validate"].fn(content="{}"))
+        second = json.loads(
+            tools["configuration.diff"].fn(current="{}", candidate="{}")
+        )
+        assert first["operation"] == "configuration.validate"
+        assert second["operation"] == "configuration.diff"
+
+
+class TestTheMcpTools:
+    """The MCP server must build, and every tool must run its own operation.
+
+    The class behind the server was renamed in mcp 2.x, and the tool
+    builder used a parameter name the SDK refuses.  The adapter has to
+    work with the SDK that is installed, and has to say so when it is
+    not usable.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _the_extra_is_installed(self):
+        if not _installed("mcp"):
+            pytest.skip("mcp is not installed")
+
+    @pytest.fixture
+    def server(self, registry):
+        from netforge.adapters.mcp import build_server
+
+        return build_server(registry)
+
+    @staticmethod
+    def _the_text(result) -> str:
+        """Return the text of the first content block of a tool result."""
+        return result.content[0].text
+
+    def test_the_server_builds(self, server):
+        assert server is not None
+
+    def test_there_is_a_tool_for_every_operation(self, registry, server):
+        import asyncio
+
+        tools = asyncio.run(server.list_tools())
+        assert {tool.name for tool in tools} == set(registry.names())
+
+    def test_every_tool_declares_the_parameters_of_its_operation(self, registry, server):
+        import asyncio
+
+        tools = asyncio.run(server.list_tools())
+        for tool in tools:
+            expected = registry.get_operation(tool.name).request_model
+            declared = set(tool.input_schema.get("properties", {}))
+            assert declared == set(expected.model_fields), tool.name
+
+    def test_a_tool_runs_the_operation_it_is_named_after(self, server):
+        import asyncio
+
+        result = asyncio.run(server.call_tool("configuration.validate", {"content": "{}"}))
+        assert json.loads(self._the_text(result))["operation"] == "configuration.validate"
+
+    def test_two_tools_run_two_different_operations(self, server):
+        import asyncio
+
+        first = asyncio.run(
+            server.call_tool("configuration.validate", {"content": "{}"})
+        )
+        second = asyncio.run(
+            server.call_tool("configuration.diff", {"current": "{}", "candidate": "{}"})
+        )
+        assert json.loads(self._the_text(first))["operation"] == "configuration.validate"
+        assert json.loads(self._the_text(second))["operation"] == "configuration.diff"
+
+    def test_the_adapter_is_not_available_without_the_server_class(self, registry, monkeypatch):
+        from netforge.adapters import mcp
+
+        def missing():
+            raise DependencyMissingError("mcp", extra="mcp")
+
+        monkeypatch.setattr(mcp, "_load_mcp", missing)
+
+        adapter = McpAdapter(registry)
+        assert adapter.available() is False
+        assert "mcp" in (adapter.unavailable_reason() or "")
+
+    def test_an_unusable_version_of_mcp_is_reported_honestly(self, registry, monkeypatch):
+        from netforge.adapters import mcp
+        from netforge.adapters.base import AdapterError
+
+        def unusable():
+            raise AdapterError("the installed version of mcp has neither MCPServer nor FastMCP")
+
+        monkeypatch.setattr(mcp, "_load_mcp", unusable)
+
+        adapter = McpAdapter(registry)
+        assert adapter.available() is False
+        reason = adapter.unavailable_reason() or ""
+        assert "mcp" in reason
+        assert "version" in reason

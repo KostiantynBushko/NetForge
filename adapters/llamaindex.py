@@ -7,7 +7,7 @@ built on LlamaIndex can call them.
 The mapping is one-to-one:
 
 * an operation becomes a function tool;
-* the request model becomes the tool's parameters;
+* the request model becomes the tool's schema;
 * the response model becomes the tool's return annotation.
 
 ``llama-index-core`` is an optional extra and is imported lazily.  The
@@ -17,10 +17,9 @@ exercise -- the parts that matter do not need LlamaIndex to be installed.
 
 from __future__ import annotations
 
-import json
 from typing import Any
 
-from netforge.adapters.base import Adapter
+from netforge.adapters.base import Adapter, the_operation_caller
 from netforge.core.exceptions import DependencyMissingError
 from netforge.core.logging import get_logger
 from netforge.registry.registry import OperationRegistry
@@ -113,21 +112,22 @@ def build_tools(registry: OperationRegistry | None = None) -> list[Any]:
     tools: list[Any] = []
     for descriptor in registry:
         operation_class = registry.get_operation(descriptor.name)
-        parameters = tool_parameters(descriptor)
 
-        async def _call(**kwargs: Any) -> str:
-            operation = operation_class()
-            response = await operation.run_request(kwargs)
-            return json.dumps(response.model_dump(mode="json"), indent=2)
-
-        _call.__name__ = descriptor.name.replace(".", "_")
-        _call.__doc__ = descriptor.summary or descriptor.description
+        # The caller is built here, so that it holds its own operation and
+        # not the one the loop happened to leave behind.
+        call = the_operation_caller(operation_class)
+        call.__name__ = descriptor.name.replace(".", "_")
+        call.__doc__ = descriptor.summary or descriptor.description
 
         tools.append(
             function_tool.from_defaults(
-                fn=_call,
+                fn=call,
                 name=descriptor.name,
                 description=descriptor.summary or descriptor.description,
+                # The request model is the schema of the tool: without it
+                # the tool advertises no parameters at all, and a model
+                # has no way of knowing what to pass.
+                fn_schema=operation_class.request_model,
             )
         )
     return tools

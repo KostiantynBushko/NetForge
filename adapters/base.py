@@ -17,15 +17,23 @@ say so when it is missing.
 
 from __future__ import annotations
 
+import inspect
+import json
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from typing import Any
 
 from netforge.core.exceptions import DependencyMissingError
 from netforge.core.logging import get_logger
 from netforge.models.risk import RiskLevel
 
-__all__ = ["Adapter", "AdapterError", "find_missing_dependencies"]
+__all__ = [
+    "Adapter",
+    "AdapterError",
+    "find_missing_dependencies",
+    "the_operation_caller",
+    "the_request_signature",
+]
 
 _logger = get_logger("adapters.base")
 
@@ -51,6 +59,51 @@ def find_missing_dependencies(
         except DependencyMissingError:
             missing.append(name)
     return missing
+
+
+def the_operation_caller(operation_class: type[Any]) -> Callable[..., Awaitable[str]]:
+    """Return the coroutine that runs one operation and reports its result.
+
+    The operation class is bound when the caller is *built*, not when it
+    is called.  A closure over a variable of a loop resolves every caller
+    to the last operation of that loop, because the variable is rebound
+    once and the closure reads whatever it holds when it is finally
+    called.  An adapter that exposes many operations cannot afford that:
+    every tool would run the same operation.
+    """
+    async def call(**kwargs: Any) -> str:
+        operation = operation_class()
+        response = await operation.run_request(kwargs)
+        return json.dumps(response.model_dump(mode="json"), indent=2)
+
+    return call
+
+
+def the_request_signature(request_model: type[Any]) -> inspect.Signature:
+    """Return the signature of the request model of an operation.
+
+    A framework that derives the schema of a tool from the signature of
+    the function behind it has to be told what the parameters are.  The
+    request model already knows: its fields become the parameters of the
+    caller, with the types, the defaults and the required ones kept.
+    """
+    parameters: list[inspect.Parameter] = []
+    for name, field in request_model.model_fields.items():
+        annotation = field.annotation if field.annotation is not None else Any
+        if field.is_required():
+            parameters.append(
+                inspect.Parameter(name, inspect.Parameter.KEYWORD_ONLY, annotation=annotation)
+            )
+        else:
+            parameters.append(
+                inspect.Parameter(
+                    name,
+                    inspect.Parameter.KEYWORD_ONLY,
+                    annotation=annotation,
+                    default=field.get_default(call_default_factory=True),
+                )
+            )
+    return inspect.Signature(parameters)
 
 
 class Adapter(ABC):
