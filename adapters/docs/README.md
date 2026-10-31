@@ -1,8 +1,9 @@
 # `netforge.adapters`
 
-The adapter layer: the command line, the REST API, MCP and LlamaIndex.
+The adapter layer: the command line, the REST API, MCP, LlamaIndex,
+LangChain and Pydantic AI.
 
-Four adapters, one contract. Every adapter reads the same registry and
+Six adapters, one contract. Every adapter reads the same registry and
 renders it in its own way. None of them reimplements a capability.
 
 | Adapter | Extra | What it exposes |
@@ -11,6 +12,8 @@ renders it in its own way. None of them reimplements a capability.
 | `rest` | `rest` | `GET /operations`, `POST /operations/{name}`, … |
 | `mcp` | `mcp` | every operation as an MCP tool |
 | `llamaindex` | `llamaindex` | every operation as a `FunctionTool` |
+| `langchain` | `langchain` | every operation as a `StructuredTool` |
+| `pydantic-ai` | `pydantic-ai` | every operation as a Pydantic AI `Tool` |
 
 ---
 
@@ -146,18 +149,58 @@ the model publishes is the schema the tool carries.
 
 ---
 
+## The LangChain adapter
+
+Needs the `langchain` extra (`langchain-core`).
+
+```python
+from netforge.adapters import build_langchain_tools
+
+tools = build_langchain_tools()        # a StructuredTool per operation
+```
+
+`build_langchain_tools(registry=None)` returns a list of structured tools.
+The request model of the operation is the `args_schema` of the tool, so
+LangChain validates the arguments of the call against it.
+
+---
+
+## The Pydantic AI adapter
+
+Needs the `pydantic-ai` extra.
+
+```python
+from netforge.adapters import build_pydantic_ai_agent
+
+agent = build_pydantic_ai_agent()        # an agent with a tool per operation
+```
+
+`build_pydantic_ai_tools(registry=None)` returns a list of tools, and
+`build_pydantic_ai_agent(registry=None, model=None, **kwargs)` returns an
+agent that carries them. Pydantic AI is built on Pydantic, so the request
+model of the operation is the parameter of the tool itself: the framework
+validates the arguments against it and flattens it into the schema the
+model is offered.
+
+---
+
 ## The public API
 
 ```text
 class Adapter(ABC)
 class AdapterError(Exception)
 class CliAdapter          (registry=None)
+class LangChainAdapter    (registry=None)
 class LlamaIndexAdapter   (registry=None)
 class McpAdapter          (registry=None)
+class PydanticAiAdapter   (registry=None)
 class RestAdapter         (registry=None)
 
 build_app(registry=None, *, max_risk=4) -> Any          a FastAPI application
+build_langchain_tools(registry=None) -> list[Any]      StructuredTool per operation
 build_parser() -> argparse.ArgumentParser
+build_pydantic_ai_agent(registry=None, model=None)      an agent with every tool
+build_pydantic_ai_tools(registry=None) -> list[Any]     Tool per operation
 build_server(registry=None) -> Any                      an MCP server
 build_tools(registry=None) -> list[Any]                 FunctionTool per operation
 main(argv=None) -> int                                  the `netforge` command

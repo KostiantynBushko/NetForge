@@ -1,7 +1,8 @@
 """The adapter layer.
 
 An adapter exposes NetForge to a consumer.  The framework itself knows
-nothing about the consumer's world: no HTTP, no MCP, no LlamaIndex.
+nothing about the consumer's world: no HTTP, no MCP, no LlamaIndex, no
+LangChain, no Pydantic AI.
 
 The contract is small, and it is the same for every adapter:
 
@@ -11,8 +12,8 @@ The contract is small, and it is the same for every adapter:
 * an adapter *invokes* an operation.
 
 The CLI adapter is always available, because it is built on the standard
-library.  The REST, MCP and LlamaIndex adapters need their extra, and they
-say so when it is missing.
+library.  The other adapters need their extra, and they say so when it
+is missing.
 """
 
 from __future__ import annotations
@@ -32,6 +33,7 @@ __all__ = [
     "AdapterError",
     "find_missing_dependencies",
     "the_operation_caller",
+    "the_request_caller",
     "the_request_signature",
 ]
 
@@ -76,6 +78,26 @@ def the_operation_caller(operation_class: type[Any]) -> Callable[..., Awaitable[
         response = await operation.run_request(kwargs)
         return json.dumps(response.model_dump(mode="json"), indent=2)
 
+    return call
+
+
+def the_request_caller(
+    operation_class: type[Any],
+    request_model: type[Any],
+) -> Callable[..., Awaitable[str]]:
+    """Return the coroutine that takes the request model of an operation.
+
+    Some frameworks want the request model itself to be the parameter of
+    the tool, and flatten it into the schema the model is offered.  The
+    annotation of the parameter is therefore set here: the framework
+    reads the annotations of the function, and not the model behind them.
+    """
+    async def call(request: Any) -> str:
+        operation = operation_class()
+        response = await operation.run_request(request)
+        return json.dumps(response.model_dump(mode="json"), indent=2)
+
+    call.__annotations__ = {"request": request_model, "return": str}
     return call
 
 

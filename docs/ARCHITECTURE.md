@@ -14,8 +14,8 @@ Networking logic must never depend on an AI framework.
 
 The core of NetForge — `netforge.core`, `netforge.models`,
 `netforge.registry` — imports Pydantic and the standard library. Nothing
-else. There is no `llama_index` import anywhere below `netforge.adapters`,
-and the adapter imports are optional and lazy.
+else. There is no `llama_index`, `langchain` or `pydantic_ai` import anywhere
+below `netforge.adapters`, and the adapter imports are optional and lazy.
 
 The evidence is mechanical: `pip install netforge` pulls in exactly one
 package, and every capability module imports only what it needs.
@@ -61,7 +61,8 @@ version and a list of operations.
 ### Reusable
 
 Every capability is available through the Python SDK, the CLI, the REST API,
-MCP and LlamaIndex — without duplicating implementation logic.
+MCP, LlamaIndex, LangChain and Pydantic AI — without duplicating
+implementation logic.
 
 This is the property the rest of the design exists to serve.
 
@@ -70,19 +71,19 @@ This is the property the rest of the design exists to serve.
 ## The layers
 
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  adapters/      cli · rest · mcp · llamaindex                │
-├──────────────────────────────────────────────────────────────┤
-│  registry/      the catalogue — the only source of truth     │
-├──────────────────────────────────────────────────────────────┤
-│  capability     connectivity · discovery · dns · protocols    │
-│  packages       capture · analysis · configuration ·          │
-│                 security · manipulation · emulation ·          │
-│                 sentinel                                       │
-├──────────────────────────────────────────────────────────────┤
-│  core/          operation · context · config · runner · native│
-│  models/        request · response · risk · category          │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────┐
+│  adapters/      cli · rest · mcp · llamaindex · langchain · pydantic-ai │
+├─────────────────────────────────────────────────────────────────────────┤
+│  registry/      the catalogue — the only source of truth                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  capability     connectivity · discovery · dns · protocols              │
+│  packages       capture · analysis · configuration ·                    │
+│                 security · manipulation · emulation ·                   │
+│                 sentinel                                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│  core/          operation · context · config · runner · native          │
+│  models/        request · response · risk · category                    │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 Each layer only knows about the one below it. A capability package never
@@ -204,9 +205,10 @@ An adapter has a small contract:
 * `describe()` — what is it, and what can it do?
 * the catalogue, and the ability to invoke an operation.
 
-The CLI is built on `argparse` and is always available. The REST, MCP and
-LlamaIndex adapters import their extra lazily and report, in
-`unavailable_reason()`, exactly what is missing and how to install it.
+The CLI is built on `argparse` and is always available. The REST, MCP,
+LlamaIndex, LangChain and Pydantic AI adapters import their extra lazily
+and report, in `unavailable_reason()`, exactly what is missing and how to
+install it.
 
 An adapter is never partial: it exposes the whole catalogue or it is not
 available. A tool that works for some capabilities and silently does not

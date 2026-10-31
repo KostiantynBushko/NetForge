@@ -68,7 +68,7 @@ One contract, four renderings of the same catalogue.
 
 | Module | What it is for | Document |
 |---|---|---|
-| `netforge.adapters` | The command line, the REST API, MCP and LlamaIndex. Every adapter reads the registry; none of them reimplements a capability. | [adapters.md](../adapters/docs/README.md) |
+| `netforge.adapters` | The command line, the REST API, MCP, LlamaIndex, LangChain and Pydantic AI. Every adapter reads the registry; none of them reimplements a capability. | [adapters.md](../adapters/docs/README.md) |
 
 ---
 

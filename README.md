@@ -1,8 +1,8 @@
 # NetForge
 
 > A modular network operations and security toolkit. One implementation of a
-> capability, available through Python, a command line, a REST API, MCP and
-> LlamaIndex function tools.
+> capability, available through Python, a command line, a REST API, MCP,
+> LlamaIndex function tools, LangChain tools and Pydantic AI tools.
 
 NetForge is a **framework first**. The networking logic never depends on an AI
 framework, and the framework itself depends on nothing but Pydantic and the
@@ -41,6 +41,8 @@ The core needs Python 3.11 or newer.
 | `rest` | the REST API (`fastapi`, `uvicorn`) |
 | `mcp` | the MCP server (`mcp`) |
 | `llamaindex` | the LlamaIndex function tools (`llama-index-core`) |
+| `langchain` | the LangChain tools (`langchain-core`) |
+| `pydantic-ai` | the Pydantic AI tools (`pydantic-ai`) |
 | `ssh` | the SSH connection (`asyncssh`) |
 | `dns` | the DNS record types that need a real query (`dnspython`) |
 | `mqtt` | the MQTT broker client (`paho-mqtt`) |
@@ -232,7 +234,7 @@ The framework is a set of packages, one per capability:
 ├── security/      port scanning, banners, TLS inspection, header analysis
 ├── manipulation/  TCP proxying
 ├── emulation/     network condition profiles and `tc`
-├── adapters/      CLI, REST, MCP, LlamaIndex
+├── adapters/      CLI, REST, MCP, LlamaIndex, LangChain, Pydantic AI
 └── plugins/       the plugin system
 ```
 
@@ -259,11 +261,15 @@ has its own document as well — start at [the documentation index](docs/README.
 | `rest` | `rest` | `GET /operations`, `POST /operations/{name}`, … |
 | `mcp` | `mcp` | every operation as an MCP tool |
 | `llamaindex` | `llamaindex` | every operation as a `FunctionTool` |
+| `langchain` | `langchain` | every operation as a `StructuredTool` |
+| `pydantic-ai` | `pydantic-ai` | every operation as a Pydantic AI `Tool` |
 
 ```bash
 netforge serve rest --host 127.0.0.1 --port 8080
 netforge serve mcp
 netforge serve llamaindex
+netforge serve langchain
+netforge serve pydantic-ai
 ```
 
 An adapter is never partial: it exposes the whole catalogue or it is not
@@ -351,7 +357,7 @@ folder, inside the package.
 | [The models](models/docs/README.md) | every model that crosses a boundary |
 | [The registry](registry/docs/README.md) | the catalogue — the only source of truth |
 | [The plugins](plugins/docs/README.md) | the extension point |
-| [The adapters](adapters/docs/README.md) | the CLI, the REST API, MCP and LlamaIndex |
+| [The adapters](adapters/docs/README.md) | the CLI, the REST API, MCP, LlamaIndex, LangChain and Pydantic AI |
 
 ---
 

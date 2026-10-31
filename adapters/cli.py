@@ -24,7 +24,8 @@ The commands are:
     run an operation, with the parameters of the operation as flags.
 
 ``netforge serve``
-    start one of the other adapters -- ``rest``, ``mcp`` or ``llamaindex``.
+    start one of the other adapters -- ``rest``, ``mcp``, ``llamaindex``,
+    ``langchain`` or ``pydantic-ai``.
 
 The exit code is meaningful: ``0`` for success, ``1`` for an error, ``2``
 for a usage error.  That is what a script wants.
@@ -166,7 +167,7 @@ def build_parser() -> argparse.ArgumentParser:
     serve = subparsers.add_parser("serve", help="Start one of the other adapters.")
     serve.add_argument(
         "adapter",
-        choices=["rest", "mcp", "llamaindex"],
+        choices=["rest", "mcp", "llamaindex", "langchain", "pydantic-ai"],
         help="The adapter to start.",
     )
     serve.add_argument("--host", default="127.0.0.1", help="The address to bind to.")
@@ -320,6 +321,14 @@ def _command_serve(args: argparse.Namespace, registry: OperationRegistry) -> int
         from netforge.adapters.mcp import serve_mcp
 
         return serve_mcp(registry)
+    if args.adapter == "langchain":
+        from netforge.adapters.langchain import serve_langchain
+
+        return serve_langchain(registry)
+    if args.adapter == "pydantic-ai":
+        from netforge.adapters.pydantic_ai import serve_pydantic_ai
+
+        return serve_pydantic_ai(registry)
     from netforge.adapters.llamaindex import serve_llamaindex
 
     return serve_llamaindex(registry)

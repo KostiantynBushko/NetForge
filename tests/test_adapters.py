@@ -163,10 +163,28 @@ class TestAdapterContract:
         adapter = LlamaIndexAdapter(registry)
         assert isinstance(adapter.available(), bool)
 
+    def test_the_langchain_adapter_reports_why_it_is_unavailable(self, registry):
+        from netforge.adapters.langchain import LangChainAdapter
+
+        adapter = LangChainAdapter(registry)
+        assert isinstance(adapter.available(), bool)
+        if not adapter.available():
+            assert "langchain" in (adapter.unavailable_reason() or "")
+
+    def test_the_pydantic_ai_adapter_reports_why_it_is_unavailable(self, registry):
+        from netforge.adapters.pydantic_ai import PydanticAiAdapter
+
+        adapter = PydanticAiAdapter(registry)
+        assert isinstance(adapter.available(), bool)
+        if not adapter.available():
+            assert "pydantic" in (adapter.unavailable_reason() or "")
+
     def test_every_adapter_describes_itself(self, registry):
         from netforge.adapters.cli import CliAdapter
+        from netforge.adapters.langchain import LangChainAdapter
         from netforge.adapters.llamaindex import LlamaIndexAdapter
         from netforge.adapters.mcp import McpAdapter
+        from netforge.adapters.pydantic_ai import PydanticAiAdapter
         from netforge.adapters.rest import RestAdapter
 
         for adapter in (
@@ -174,6 +192,8 @@ class TestAdapterContract:
             RestAdapter(registry),
             McpAdapter(registry),
             LlamaIndexAdapter(registry),
+            LangChainAdapter(registry),
+            PydanticAiAdapter(registry),
         ):
             described = adapter.describe()
             assert described["name"] == adapter.name
